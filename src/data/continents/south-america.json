@@ -1,0 +1,31 @@
+{
+  "id": "south-america",
+  "name": "South America",
+  "displayName": "South America",
+  "theme": { "primaryColor": "#a855f7", "secondaryColor": "#7e22ce", "mapImage": "/assets/continents/south-america/map.svg", "startLandmark": "Machu Picchu" },
+  "priceMultiplier": 1,
+  "countries": [
+    { "name": "Brazil", "color": "brown", "cities": [{ "name": "Sao Paulo", "price": 600, "rentBase": 20, "rent1House": 100, "rent2House": 300, "rent3House": 900, "rent4House": 1600, "rentHotel": 2500, "housePrice": 500, "mortgageValue": 300 }, { "name": "Rio de Janeiro", "price": 600, "rentBase": 40, "rent1House": 200, "rent2House": 600, "rent3House": 1800, "rent4House": 3200, "rentHotel": 4500, "housePrice": 500, "mortgageValue": 300 }, { "name": "Brasilia", "price": 800, "rentBase": 60, "rent1House": 300, "rent2House": 900, "rent3House": 2700, "rent4House": 4000, "rentHotel": 5500, "housePrice": 500, "mortgageValue": 400 }] },
+    { "name": "Argentina", "color": "lightBlue", "cities": [{ "name": "Buenos Aires", "price": 1000, "rentBase": 60, "rent1House": 300, "rent2House": 900, "rent3House": 2700, "rent4House": 4000, "rentHotel": 5500, "housePrice": 500, "mortgageValue": 500 }, { "name": "Cordoba", "price": 1000, "rentBase": 60, "rent1House": 300, "rent2House": 900, "rent3House": 2700, "rent4House": 4000, "rentHotel": 5500, "housePrice": 500, "mortgageValue": 500 }, { "name": "Rosario", "price": 1200, "rentBase": 80, "rent1House": 400, "rent2House": 1000, "rent3House": 3000, "rent4House": 4500, "rentHotel": 6000, "housePrice": 500, "mortgageValue": 600 }] },
+    { "name": "Chile", "color": "purple", "cities": [{ "name": "Santiago", "price": 1400, "rentBase": 100, "rent1House": 500, "rent2House": 1500, "rent3House": 4500, "rent4House": 6250, "rentHotel": 7500, "housePrice": 1000, "mortgageValue": 700 }, { "name": "Valparaiso", "price": 1400, "rentBase": 100, "rent1House": 500, "rent2House": 1500, "rent3House": 4500, "rent4House": 6250, "rentHotel": 7500, "housePrice": 1000, "mortgageValue": 700 }, { "name": "Concepcion", "price": 1600, "rentBase": 120, "rent1House": 600, "rent2House": 1800, "rent3House": 5000, "rent4House": 7000, "rentHotel": 9000, "housePrice": 1000, "mortgageValue": 800 }] },
+    { "name": "Peru", "color": "orange", "cities": [{ "name": "Lima", "price": 1800, "rentBase": 140, "rent1House": 700, "rent2House": 2000, "rent3House": 5500, "rent4House": 7500, "rentHotel": 9500, "housePrice": 1000, "mortgageValue": 900 }, { "name": "Cusco", "price": 1800, "rentBase": 140, "rent1House": 700, "rent2House": 2000, "rent3House": 5500, "rent4House": 7500, "rentHotel": 9500, "housePrice": 1000, "mortgageValue": 900 }, { "name": "Arequipa", "price": 2000, "rentBase": 160, "rent1House": 800, "rent2House": 2200, "rent3House": 6000, "rent4House": 8000, "rentHotel": 10000, "housePrice": 1000, "mortgageValue": 1000 }] }
+  ],
+  "transportation": [
+    { "type": "station", "name": "Andes Line", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "ferry", "name": "Amazon Ferry", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "motorway", "name": "Pampas Highway", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "airport", "name": "Southern Cross Airport", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 }
+  ],
+  "specialSquares": [
+    { "type": "start", "name": "Machu Picchu", "description": "Collect 5000¤" },
+    { "type": "jail", "name": "Patagonia Jail", "description": "Just visiting" },
+    { "type": "goToJail", "name": "Go to Jail" },
+    { "type": "casino", "name": "Rio Casino" },
+    { "type": "casino", "name": "Samba Casino" },
+    { "type": "lottery", "name": "Andes Lottery" },
+    { "type": "lottery", "name": "Tango Lottery" },
+    { "type": "tax", "name": "Export Tax", "amount": 2000 },
+    { "type": "tax", "name": "Harbor Tax", "amount": 750 },
+    { "type": "freeParking", "name": "Plaza Mayor", "description": "Rest up" }
+  ]
+}
