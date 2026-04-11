@@ -20,6 +20,7 @@ import {
   sellHouse,
   unmortgageProperty,
   rollDice,
+  payJailFine,
 } from '@/lib/features/game/gameSlice';
 import { selectSquareByPosition } from '@/lib/features/board/boardSelectors';
 import { GamePhase, PlayerType, TurnPhase } from '@/lib/game.types';
@@ -65,7 +66,7 @@ export function useGameTurnController() {
       return;
     }
 
-    if (shouldSkipMovement(currentPlayer, game.phase)) {
+    if (currentPlayer.type === PlayerType.AI && shouldSkipMovement(currentPlayer, game.phase)) {
       dispatch(decrementJailTurn({ playerId: currentPlayer.id }));
       finishLanding(`${currentPlayer.name} is in jail and skips movement.`);
       return;
@@ -109,7 +110,37 @@ export function useGameTurnController() {
         dispatch(addActivityLog(`${player.name} moved to square ${newPosition}.`));
         break;
     }
-  }, [currentPlayer, dispatch, finishLanding, game.board, game.phase]);
+  }, [currentPlayer, dispatch, game.board, game.phase]);
+
+  const handlePayJailFine = useCallback(() => {
+    if (!currentPlayer || !currentPlayer.isInJail) return;
+    dispatch(payJailFine({ playerId: currentPlayer.id, amount: 1000 }));
+    dispatch(addActivityLog(`${currentPlayer.name} paid 1000¤ fine to leave jail.`));
+  }, [currentPlayer, dispatch]);
+
+  const handleRollForJailEscape = useCallback(() => {
+    if (!currentPlayer || !currentPlayer.isInJail) return;
+    
+    const die1 = randomDie();
+    const die2 = randomDie();
+    const total = die1 + die2;
+    const isDouble = die1 === die2;
+    
+    dispatch(rollDice({ die1, die2, total, isDouble }));
+    
+    if (isDouble) {
+      dispatch(addActivityLog(`${currentPlayer.name} rolled doubles (${die1}, ${die2}) and escaped jail!`));
+      const boardSize = Math.max(game.board.length, 40);
+      const newPosition = (currentPlayer.position + total) % boardSize;
+      const passedStart = currentPlayer.position + total >= boardSize;
+      
+      dispatch(movePlayer({ playerId: currentPlayer.id, newPosition, passedStart }));
+    } else {
+      dispatch(addActivityLog(`${currentPlayer.name} failed to roll doubles (${die1}, ${die2}) and stays in jail.`));
+      dispatch(decrementJailTurn({ playerId: currentPlayer.id }));
+      finishLanding();
+    }
+  }, [currentPlayer, dispatch, game.board.length, finishLanding]);
 
   const handleBankruptcy = () => {
     if (!currentPlayer) {
@@ -256,6 +287,22 @@ export function useGameTurnController() {
   };
 
   useEffect(() => {
+    if (!currentPlayer || currentPlayer.type !== PlayerType.HUMAN || game.phase !== GamePhase.PLAYING) {
+      return;
+    }
+
+    if (game.turnPhase === TurnPhase.ACTION && landingIntent) {
+      if (landingIntent.kind === 'special' || landingIntent.kind === 'pay-rent') {
+        const timeout = setTimeout(() => {
+          handleLandingAction();
+        }, 1500); // 1.5s delay for human players to see the landing message
+
+        return () => clearTimeout(timeout);
+      }
+    }
+  }, [currentPlayer?.type, game.phase, game.turnPhase, landingIntent, handleLandingAction]);
+
+  useEffect(() => {
     if (!currentPlayer || currentPlayer.type !== PlayerType.AI || game.phase !== GamePhase.PLAYING) {
       return;
     }
@@ -354,5 +401,7 @@ export function useGameTurnController() {
     handleSellHouse,
     handleMortgageProperty,
     handleUnmortgageProperty,
+    handlePayJailFine,
+    handleRollForJailEscape,
   };
 }

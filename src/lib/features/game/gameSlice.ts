@@ -185,6 +185,17 @@ const gameSlice = createSlice({
         player.isInJail = false;
       }
     },
+    payJailFine(state, action: PayloadAction<{ playerId: string; amount: number }>) {
+      const player = state.players.find((item) => item.id === action.payload.playerId);
+      if (!player || !player.isInJail || player.money < action.payload.amount) {
+        return;
+      }
+
+      player.money -= action.payload.amount;
+      player.isInJail = false;
+      player.jailTurns = 0;
+      state.turnPhase = TurnPhase.ROLL_DICE;
+    },
     movePlayer(state, action: PayloadAction<MovePlayerPayload>) {
       const player = state.players.find((item) => item.id === action.payload.playerId);
       if (!player) {
@@ -376,6 +387,8 @@ const gameSlice = createSlice({
         case 'lotteryLoss':
           player.money = Math.max(0, player.money - (action.payload.amount ?? 0));
           break;
+        case 'none':
+          break;
       }
 
       state.turnPhase = TurnPhase.END_TURN;
@@ -429,6 +442,7 @@ export const {
   unmortgageProperty,
   declareBankruptcy,
   resolveLandingEffect,
+  payJailFine,
   endTurn,
   declareWinner,
   updateSettings,

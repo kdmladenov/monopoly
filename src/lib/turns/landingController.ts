@@ -5,6 +5,7 @@ import {
   SquareType,
 } from '@/lib/game.types';
 import { calculatePropertyRent, calculateTransportationRent } from '@/lib/utils/rent';
+import { getRandomLottery } from '@/lib/utils/lottery';
 
 export type LandingIntent =
   | { kind: 'none' }
@@ -33,8 +34,8 @@ export function getLandingIntent(
       case 'start':
         return {
           kind: 'special',
-          effect: { playerId: currentPlayer.id, effect: 'start' },
-          message: `${currentPlayer.name} collected a passing bonus.`,
+          effect: { playerId: currentPlayer.id, effect: 'none' },
+          message: `${currentPlayer.name} is at Start.`,
         };
       case 'tax':
         return {
@@ -56,32 +57,31 @@ export function getLandingIntent(
           },
           message: `${currentPlayer.name} was sent to jail.`,
         };
+      case 'lottery':
       case 'casino':
         {
-          const win = Math.random() > 0.5;
+          const option = getRandomLottery();
+          const effectType = option.amount >= 0 ? 
+            (special.type === 'lottery' ? 'lotteryWin' : 'casinoWin') : 
+            (special.type === 'lottery' ? 'lotteryLoss' : 'casinoLoss');
+          
           return {
             kind: 'special',
             effect: {
               playerId: currentPlayer.id,
-              effect: win ? 'casinoWin' : 'casinoLoss',
-              amount: win ? 2000 : 1500,
+              effect: effectType,
+              amount: Math.abs(option.amount),
             },
-            message: `${currentPlayer.name} visited the casino.`,
+            message: `${currentPlayer.name}: ${option.message} (${option.amount >= 0 ? '+' : ''}${option.amount}¤)`,
           };
         }
-      case 'lottery':
-        {
-          const win = Math.random() > 0.6;
-          return {
-            kind: 'special',
-            effect: {
-              playerId: currentPlayer.id,
-              effect: win ? 'lotteryWin' : 'lotteryLoss',
-              amount: win ? 3500 : 500,
-            },
-            message: `${currentPlayer.name} tried their luck in the lottery.`,
-          };
-        }
+      case 'freeParking':
+      case 'jail':
+        return {
+          kind: 'special',
+          effect: { playerId: currentPlayer.id, effect: 'none' },
+          message: `${currentPlayer.name} is visiting ${special.name}.`,
+        };
       default:
         return { kind: 'none' };
     }
@@ -96,6 +96,15 @@ export function getLandingIntent(
         toPlayerId: transportation.ownerId,
         amount,
         message: `${currentPlayer.name} paid route rent of ¤${amount}.`,
+      };
+    }
+    if (!transportation.ownerId) {
+      return {
+        kind: 'buy-property',
+        propertyPosition: square.position,
+        propertyPrice: transportation.price,
+        propertyName: transportation.name,
+        message: `${currentPlayer.name} landed on ${transportation.name}.`,
       };
     }
     return { kind: 'none' };
@@ -113,13 +122,15 @@ export function getLandingIntent(
       };
     }
 
-    return {
-      kind: 'buy-property',
-      propertyPosition: square.position,
-      propertyPrice: property.price,
-      propertyName: property.name,
-      message: `${currentPlayer.name} bought ${property.name}.`,
-    };
+    if (!property.ownerId) {
+      return {
+        kind: 'buy-property',
+        propertyPosition: square.position,
+        propertyPrice: property.price,
+        propertyName: property.name,
+        message: `${currentPlayer.name} landed on ${property.name}.`,
+      };
+    }
   }
 
   return { kind: 'none' };

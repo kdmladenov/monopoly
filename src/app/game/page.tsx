@@ -8,6 +8,15 @@ import TurnSidebar from '@/components/game/UI/TurnSidebar';
 import { useGameTurnController } from '@/hooks/useGameTurnController';
 import { Box, Container, Typography, Paper, CircularProgress, IconButton, Tooltip } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
+import LandActionDialog from '@/components/game/Modals/LandActionDialog';
+import JailActionDialog from '@/components/game/Modals/JailActionDialog';
+import { PlayerType, TurnPhase } from '@/lib/game.types';
+import { useState, useCallback, forwardRef } from 'react';
+
+const TooltipChild = forwardRef<HTMLSpanElement, any>((props, ref) => {
+  const { interactive, ...other } = props;
+  return <span ref={ref} {...other} />;
+});
 
 export default function GamePage() {
   const router = useRouter();
@@ -28,7 +37,37 @@ export default function GamePage() {
     handleSellHouse,
     handleMortgageProperty,
     handleUnmortgageProperty,
+    handlePayJailFine,
+    handleRollForJailEscape,
+    landingIntent,
   } = useGameTurnController();
+
+  const [isLandDialogOpen, setIsLandDialogOpen] = useState(false);
+  const [isJailDialogOpen, setIsJailDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (
+      game.turnPhase === TurnPhase.ROLL_DICE &&
+      currentPlayer?.type === PlayerType.HUMAN &&
+      currentPlayer.isInJail
+    ) {
+      setIsJailDialogOpen(true);
+    } else {
+      setIsJailDialogOpen(false);
+    }
+  }, [game.turnPhase, currentPlayer?.type, currentPlayer?.isInJail]);
+
+  useEffect(() => {
+    if (
+      game.turnPhase === TurnPhase.ACTION &&
+      currentPlayer?.type === PlayerType.HUMAN &&
+      landingIntent?.kind === 'buy-property'
+    ) {
+      setIsLandDialogOpen(true);
+    } else {
+      setIsLandDialogOpen(false);
+    }
+  }, [game.turnPhase, currentPlayer?.type, landingIntent?.kind]);
 
   useEffect(() => {
     if (!game || game.board.length === 0) {
@@ -95,22 +134,42 @@ export default function GamePage() {
             interactive
             placement="left"
           >
-            <IconButton 
-              sx={{ 
-                bgcolor: 'rgba(251, 191, 36, 0.1)', 
-                color: '#fcd34d',
-                width: 48,
-                height: 48,
-                border: '1px solid rgba(251, 191, 36, 0.3)',
-                boxShadow: 2,
-                backdropFilter: 'blur(4px)',
-                '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.2)' }
-              }}
-            >
-              <InfoIcon sx={{ fontSize: 24 }} />
-            </IconButton>
+            <TooltipChild>
+              <IconButton 
+                sx={{ 
+                  bgcolor: 'rgba(251, 191, 36, 0.1)', 
+                  color: '#fcd34d',
+                  width: 48,
+                  height: 48,
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  boxShadow: 2,
+                  backdropFilter: 'blur(4px)',
+                  '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.2)' }
+                }}
+              >
+                <InfoIcon sx={{ fontSize: 24 }} />
+              </IconButton>
+            </TooltipChild>
           </Tooltip>
         </Box>
+
+        <LandActionDialog
+          open={isLandDialogOpen}
+          onClose={() => setIsLandDialogOpen(false)}
+          square={activeLandingSquare}
+          player={currentPlayer}
+          enableAuctions={game.settings.enableAuctions}
+          onBuy={handleLandingAction}
+          onAuction={handleStartAuction}
+        />
+
+        <JailActionDialog
+          open={isJailDialogOpen}
+          onPayFine={handlePayJailFine}
+          onRollForEscape={handleRollForJailEscape}
+          playerMoney={currentPlayer?.money ?? 0}
+          fineAmount={1000}
+        />
       </Box>
 
       {/* Sidebar Area - Fixed exactly as in image */}

@@ -157,7 +157,7 @@ export interface MovePlayerPayload {
 
 export interface LandingEffectPayload {
   playerId: string;
-  effect: 'start' | 'tax' | 'goToJail' | 'casinoWin' | 'casinoLoss' | 'lotteryWin' | 'lotteryLoss';
+  effect: 'start' | 'tax' | 'goToJail' | 'casinoWin' | 'casinoLoss' | 'lotteryWin' | 'lotteryLoss' | 'none';
   amount?: number;
   jailPosition?: number;
 }

@@ -17,7 +17,43 @@ interface Props {
 }
 
 export default function BoardSquareView({ square }: Props) {
-  const isCorner = [0, 12, 20, 32].includes(square.position);
+  const pos = square.position;
+  const isCorner = [0, 12, 20, 32].includes(pos);
+
+  let side: 'bottom' | 'left' | 'top' | 'right' = 'bottom';
+  if (pos >= 0 && pos <= 12) side = 'bottom';
+  else if (pos > 12 && pos < 20) side = 'left';
+  else if (pos >= 20 && pos <= 32) side = 'top';
+  else if (pos > 32) side = 'right';
+
+  // Determine flex direction and bar styling based on side
+  const getLayoutStyles = () => {
+    switch (side) {
+      case 'left':
+        return { 
+          flexDirection: 'row-reverse',
+          barStyle: { width: '22%', height: '100%', borderLeft: '1.5px solid black' }
+        };
+      case 'top':
+        return { 
+          flexDirection: 'column-reverse',
+          barStyle: { height: '22%', width: '100%', borderTop: '1.5px solid black' }
+        };
+      case 'right':
+        return { 
+          flexDirection: 'row',
+          barStyle: { width: '22%', height: '100%', borderRight: '1.5px solid black' }
+        };
+      case 'bottom':
+      default:
+        return { 
+          flexDirection: 'column',
+          barStyle: { height: '22%', width: '100%', borderBottom: '1.5px solid black' }
+        };
+    }
+  };
+
+  const { flexDirection, barStyle } = getLayoutStyles();
 
   const getIcon = () => {
     if (square.type === SquareType.TRANSPORTATION) {
@@ -32,10 +68,10 @@ export default function BoardSquareView({ square }: Props) {
       if (sType === 'casino') return <CasinoIcon sx={{ fontSize: '1.2rem', color: '#ef4444' }} />;
       if (sType === 'lottery') return <LocalFloristIcon sx={{ fontSize: '1.2rem', color: '#22c55e' }} />;
       if (sType === 'tax') return <MonetizationOnIcon sx={{ fontSize: '1.2rem', color: '#92400e' }} />;
-      if (sType === 'freeParking' || square.position === 20) return <BeachAccessIcon sx={{ fontSize: '2rem', color: '#16a34a' }} />;
-      if (sType === 'goToJail' || square.position === 32) return <GavelIcon sx={{ fontSize: '2rem', color: '#1e293b' }} />;
-      if (sType === 'jail' || square.position === 12) return <SentimentVeryDissatisfiedIcon sx={{ fontSize: '2rem', color: '#1e293b' }} />;
-      if (sType === 'start' || square.position === 0) return (
+      if (sType === 'freeParking' || pos === 20) return <BeachAccessIcon sx={{ fontSize: '2rem', color: '#16a34a' }} />;
+      if (sType === 'goToJail' || pos === 32) return <GavelIcon sx={{ fontSize: '2rem', color: '#1e293b' }} />;
+      if (sType === 'jail' || pos === 12) return <SentimentVeryDissatisfiedIcon sx={{ fontSize: '2rem', color: '#1e293b' }} />;
+      if (sType === 'start' || pos === 0) return (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <PlayArrowIcon sx={{ fontSize: '1.5rem', color: '#16a34a' }} />
           <LocalAtmIcon sx={{ fontSize: '1rem', color: '#16a34a' }} />
@@ -54,7 +90,7 @@ export default function BoardSquareView({ square }: Props) {
         height: '100%',
         width: '100%',
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection,
         bgcolor: 'white',
         border: '1px solid black',
         borderRadius: 0,
@@ -66,14 +102,21 @@ export default function BoardSquareView({ square }: Props) {
       {square.type === SquareType.PROPERTY && square.property && (
         <Box
           sx={{
-            height: '22%',
             bgcolor: square.property.color || '#ccc',
-            borderBottom: '1.5px solid black',
+            ...barStyle
           }}
         />
       )}
       
-      <Box sx={{ p: 0.5, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ 
+        p: 0.5, 
+        flexGrow: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        overflow: 'hidden'
+      }}>
         <Typography 
           variant="caption" 
           sx={{ 
@@ -82,7 +125,8 @@ export default function BoardSquareView({ square }: Props) {
             fontSize: isCorner ? '0.75rem' : '0.6rem', 
             textAlign: 'center', 
             lineHeight: 1.1,
-            mt: 0.2
+            mt: 0.2,
+            maxWidth: '100%'
           }}
         >
           {name}
