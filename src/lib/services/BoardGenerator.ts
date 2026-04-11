@@ -3,146 +3,144 @@ import {
   BoardSquare,
   ContinentId,
   PropertyDetails,
-  SpecialSquare,
   SquareType,
   TransportationSquare,
 } from '@/lib/game.types';
 
-type ContinentModel = {
-  countries: Array<{
-    name: string;
-    color: string;
-    cities: Array<{
-      name: string;
-      price: number;
-      rentBase: number;
-      rent1House: number;
-      rent2House: number;
-      rent3House: number;
-      rent4House: number;
-      rentHotel: number;
-      housePrice: number;
-      mortgageValue: number;
-    }>;
-  }>;
-  transportation: TransportationSquare[];
-  specialSquares: SpecialSquare[];
-};
-
 export class BoardGenerator {
   generateBoard(continentId: ContinentId): BoardSquare[] {
-    const continent = continentDataMap[continentId] as unknown as ContinentModel;
-    const cityPool = this.buildCityPool(continent);
-    const transportPositions = [5, 15, 25, 35];
-    const specialByPosition = new Map<number, SpecialSquare>();
-
-    continent.specialSquares.forEach((square, index) => {
-      if (square.type === 'start') specialByPosition.set(0, square);
-      if (square.type === 'jail') specialByPosition.set(10, square);
-      if (square.type === 'freeParking') specialByPosition.set(20, square);
-      if (square.type === 'goToJail') specialByPosition.set(30, square);
-      if (square.type === 'casino') specialByPosition.set(index === 0 ? 7 : 22, square);
-      if (square.type === 'lottery') specialByPosition.set(index === 0 ? 2 : 17, square);
-      if (square.type === 'tax') specialByPosition.set(index === 0 ? 4 : 38, square);
-    });
-
-    const board: BoardSquare[] = [];
-    let cityIndex = 0;
-    let transportIndex = 0;
-
-    for (let position = 0; position < 40; position += 1) {
-      if (position === 0) {
-        board.push({
-          id: `square_${position}`,
-          position,
-          type: SquareType.SPECIAL,
-          special: continent.specialSquares.find((square) => square.type === 'start'),
-        });
-        continue;
-      }
-
-      if (transportPositions.includes(position)) {
-        const transportation = continent.transportation[transportIndex % continent.transportation.length];
-        board.push({
-          id: `square_${position}`,
-          position,
-          type: SquareType.TRANSPORTATION,
-          transportation: {
-            ...transportation,
-            ownerId: null,
-          } as TransportationSquare,
-        });
-        transportIndex += 1;
-        continue;
-      }
-
-      const special = specialByPosition.get(position);
-      if (special) {
-        board.push({
-          id: `square_${position}`,
-          position,
-          type: SquareType.SPECIAL,
-          special,
-        });
-        continue;
-      }
-
-      const city = cityPool[cityIndex % cityPool.length];
-      board.push({
-        id: `square_${position}`,
-        position,
-        type: SquareType.PROPERTY,
-        property: this.toProperty(position, city, cityIndex),
-      });
-      cityIndex += 1;
+    const continent = (continentDataMap as any)[continentId];
+    
+    // If it's already flat (legacy/hardcoded), just return it
+    if (continent.squares) {
+      return (continent.squares as any[]).map((s: any) => this.mapToBoardSquare(s));
     }
 
-    return board;
+    // Hierarchical logic for the restored schema
+    const squares: BoardSquare[] = [];
+    const properties: any[] = [];
+    continent.countries.forEach((country: any) => {
+      country.cities.forEach((city: any) => {
+        properties.push({ ...city, color: country.color });
+      });
+    });
+
+    const transportation = continent.transportation || [];
+    const specials = continent.specialSquares || [];
+
+    // Define fixed positions for a 40-tile board (13x9 corners: 0, 12, 20, 32)
+    // This is a simplified logic to fill the board
+    for (let i = 0; i < 40; i++) {
+      let type: SquareType = SquareType.SPECIAL;
+      let data: any = null;
+
+      // Corner Assignments
+      if (i === 0) data = specials.find((s: any) => s.type === 'start') || { name: 'START', type: 'start' };
+      else if (i === 12) data = specials.find((s: any) => s.type === 'jail') || { name: 'JAIL', type: 'jail' };
+      else if (i === 20) data = specials.find((s: any) => s.type === 'freeParking') || { name: 'FREE PARKING', type: 'freeParking' };
+      else if (i === 32) data = specials.find((s: any) => s.type === 'goToJail') || { name: 'GO TO JAIL', type: 'goToJail' };
+      
+      // Transportation Slots (5, 15, 25, 35)
+      else if ([5, 15, 25, 35].includes(i)) {
+        type = SquareType.TRANSPORTATION;
+        const tIndex = [5, 15, 25, 35].indexOf(i);
+        data = transportation[tIndex] || { name: 'Station', type: 'station', price: 2000 };
+      }
+      
+      // Special Item Dispersion
+      else if ([2, 17, 33].includes(i)) data = specials.find((s: any) => s.type === 'lottery') || { name: 'Lottery', type: 'lottery' };
+      else if ([6, 22, 36].includes(i)) data = specials.find((s: any) => s.type === 'casino') || { name: 'Casino', type: 'casino' };
+      else if (i === 4 || i === 38) {
+        const taxS = specials.filter((s: any) => s.type === 'tax');
+        data = (i === 4 ? taxS[0] : taxS[1]) || { name: 'Tax', type: 'tax', amount: 2000 };
+      }
+
+      // Property Filling
+      else {
+        type = SquareType.PROPERTY;
+        // Find a property that hasn't been assigned yet? Simple sequence for now
+        // Standard Monopoly property indices: 1, 3, 6, 8, 9, 11, 13, 14, 16, 18, 19, 21, 23, 24, 26, 27, 28, 29, 31, 34, 37, 39
+        const propIndices = [1, 3, 7, 8, 9, 11, 13, 14, 16, 18, 19, 21, 23, 24, 26, 27, 28, 29, 31, 34, 37, 39];
+        const pIndex = propIndices.indexOf(i);
+        if (pIndex !== -1 && properties[pIndex]) {
+          data = properties[pIndex];
+        } else {
+          // Fill remaining property slots with generic or neighbors
+          type = SquareType.SPECIAL;
+          data = { name: 'Card', type: 'lottery' };
+        }
+      }
+
+      squares.push(this.createSquareFromData(i, type, data));
+    }
+
+    return squares;
   }
 
-  private buildCityPool(continent: ContinentModel) {
-    return continent.countries.flatMap((country) =>
-      country.cities.map((city, index) => ({
-        ...city,
-        country: country.name,
-        color: country.color,
-        key: `${country.name}-${city.name}-${index}`,
-      }))
-    );
-  }
-
-  private toProperty(position: number, city: ReturnType<typeof this.buildCityPool>[number], index: number): PropertyDetails {
-    const suffix = city.key ? ` ${Math.floor(index / 12) + 1}` : '';
-    return {
-      id: `property_${position}`,
-      name: `${city.name}${suffix}`,
-      type: SquareType.PROPERTY,
-      position,
-      country: city.country,
-      color: city.color,
-      price: city.price,
-      rentStructure: {
-        base: city.rentBase,
-        house1: city.rent1House,
-        house2: city.rent2House,
-        house3: city.rent3House,
-        house4: city.rent4House,
-        hotel: city.rentHotel,
-      },
-      housePrice: city.housePrice,
-      mortgageValue: city.mortgageValue,
-      ownerId: null,
-      houses: 0,
-      isMortgaged: false,
+  private mapToBoardSquare(s: any): BoardSquare {
+    const square: BoardSquare = {
+      id: `square_${s.position}`,
+      position: s.position,
+      type: s.type as SquareType,
     };
+
+    if (s.type === SquareType.PROPERTY && s.property) {
+      square.property = { ...s.property, id: `property_${s.position}`, position: s.position, ownerId: null, houses: 0, isMortgaged: false };
+    } else if (s.type === SquareType.TRANSPORTATION && s.transportation) {
+      square.transportation = { ...s.transportation, ownerId: null };
+    } else if (s.type === SquareType.SPECIAL && s.special) {
+      square.special = s.special;
+    }
+    return square;
   }
 
-  private propertyPositions(): number[] {
-    return [
-      1, 3, 6, 8, 9,
-      11, 13, 14, 16, 18, 19,
-      21, 23, 24, 26, 27, 29,
-      31, 32, 33, 34, 36, 37, 39,
-    ];
+  private createSquareFromData(pos: number, type: SquareType, data: any): BoardSquare {
+    const square: BoardSquare = {
+      id: `square_${pos}`,
+      position: pos,
+      type,
+    };
+
+    if (type === SquareType.PROPERTY) {
+      const colorMap: any = { brown: '#78350f', lightBlue: '#60a5fa', purple: '#a855f7', orange: '#fb923c', red: '#ef4444', yellow: '#facc15', green: '#22c55e', darkBlue: '#1e40af' };
+      square.property = {
+        id: `prop_${pos}`,
+        name: data.name,
+        type: SquareType.PROPERTY,
+        position: pos,
+        price: data.price,
+        color: colorMap[data.color] || data.color || '#ccc',
+        rentStructure: {
+          base: data.rentBase,
+          house1: data.rent1House,
+          house2: data.rent2House,
+          house3: data.rent3House,
+          house4: data.rent4House,
+          hotel: data.rentHotel,
+        },
+        housePrice: data.housePrice,
+        mortgageValue: data.mortgageValue,
+        ownerId: null,
+        houses: 0,
+        isMortgaged: false,
+      };
+    } else if (type === SquareType.TRANSPORTATION) {
+      square.transportation = {
+        type: data.type,
+        name: data.name,
+        price: data.price,
+        rent: data.rent,
+        mortgageValue: data.mortgageValue,
+        ownerId: null,
+      };
+    } else {
+      square.special = {
+        type: data.type,
+        name: data.name,
+        amount: data.amount,
+      };
+    }
+
+    return square;
   }
 }

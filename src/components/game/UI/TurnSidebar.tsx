@@ -1,13 +1,8 @@
 'use client';
 
 import { GameState, Player } from '@/lib/game.types';
-import { canEndTurn, canRoll, getDoubleTurnHint, getTurnHint } from '@/lib/turns/turnController';
-import {
-  canDeclareBankruptcy,
-  getPlayerStatus,
-  getPlayerTurnHint,
-} from '@/lib/turns/playerTurnController';
-import ActivityLogPanel from './ActivityLogPanel';
+import { canEndTurn, canRoll } from '@/lib/turns/turnController';
+import { Box, Paper, Typography, Button, Avatar } from '@mui/material';
 
 interface Props {
   game: GameState;
@@ -26,60 +21,115 @@ export default function TurnSidebar({
   onEndTurn,
   onDeclareBankruptcy,
 }: Props) {
-  const isBankruptcyAvailable = canDeclareBankruptcy(currentPlayer, game.phase);
-
   return (
-    <aside className="space-y-6 rounded-[2rem] border border-white/10 bg-[var(--panel)] p-5 shadow-2xl shadow-black/30 backdrop-blur-xl">
-      <div>
-        <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Turn</p>
-        <div className="mt-2 rounded-2xl bg-white/5 p-4">
-          <p className="text-xl font-semibold">{currentPlayer?.name ?? 'No player'}</p>
-          <p className="text-sm text-slate-400">Phase: {game.turnPhase}</p>
-          <p className="text-sm text-slate-400">Round: {game.turn}</p>
-          <p className="text-sm text-slate-400">Position: {currentPlayer?.position ?? 0}</p>
-          <p className="text-sm text-slate-400">Bankrupt: {bankruptPlayers.length}</p>
-          <p className="text-sm text-slate-400">{getPlayerStatus(currentPlayer)}</p>
-          {getPlayerTurnHint(currentPlayer) ? (
-            <p className="text-sm text-cyan-200">{getPlayerTurnHint(currentPlayer)}</p>
-          ) : null}
-        </div>
-      </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#d1d5db' }}>
+      <Box
+        sx={{
+          flexGrow: 1,
+          p: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          overflowY: 'auto',
+        }}
+      >
+        {game.players.map((player) => {
+          const isActive = player.id === currentPlayer?.id;
+          return (
+            <Box key={player.id} sx={{ textAlign: 'center', mb: 1 }}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  color: '#1e293b', 
+                  fontWeight: 900, 
+                  fontSize: '0.85rem',
+                  mb: 0.25 
+                }}
+              >
+                {player.name}
+              </Typography>
+              <Paper
+                elevation={isActive ? 4 : 1}
+                sx={{
+                  p: 0.75,
+                  bgcolor: 'white',
+                  borderRadius: 2,
+                  border: `3px solid ${player.color}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  transition: 'all 0.2s',
+                  transform: isActive ? 'scale(1.02)' : 'none',
+                  boxShadow: isActive ? `0 0 10px ${player.color}44` : 'none',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 70,
+                    height: 70,
+                    bgcolor: `${player.color}11`,
+                    borderRadius: 1.5,
+                    border: '1px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <Typography variant="h3" sx={{ opacity: 0.3, fontWeight: 900, color: player.color }}>
+                    {player.name[0]}
+                  </Typography>
+                </Box>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    mt: 1, 
+                    color: '#16a34a', 
+                    fontWeight: 900,
+                    fontSize: '1.1rem' 
+                  }}
+                >
+                  {player.money.toLocaleString()}¤
+                </Typography>
+              </Paper>
+            </Box>
+          );
+        })}
 
-      <div className="grid gap-3">
-        <button
-          onClick={onRoll}
-          disabled={!canRoll(game.turnPhase, game.phase)}
-          className="rounded-2xl bg-cyan-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200"
-        >
-          Roll dice
-        </button>
-        <button
-          onClick={onEndTurn}
-          disabled={!canEndTurn(game.turnPhase) || currentPlayer?.isInJail}
-          className="rounded-2xl border border-white/15 px-4 py-3 font-semibold transition hover:bg-white/8"
-        >
-          End turn
-        </button>
-      </div>
-
-      <p className="text-xs text-slate-400">{getTurnHint(game.turnPhase, game.phase)}</p>
-      {getDoubleTurnHint(game.lastDiceRoll) ? (
-        <p className="text-xs text-cyan-200">{getDoubleTurnHint(game.lastDiceRoll)}</p>
-      ) : null}
-
-      {isBankruptcyAvailable ? (
-        <div className="rounded-2xl border border-rose-400/20 bg-rose-400/10 p-4 text-sm text-rose-100">
-          This player is out of money and can declare bankruptcy.
-          <button
-            onClick={onDeclareBankruptcy}
-            className="mt-3 w-full rounded-xl bg-rose-300 px-4 py-2 font-semibold text-rose-950 transition hover:bg-rose-200"
+        <Box sx={{ mt: 'auto', p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Button
+            variant="contained"
+            onClick={onRoll}
+            disabled={!canRoll(game.turnPhase, game.phase)}
+            fullWidth
+            sx={{ 
+              py: 1, 
+              fontSize: '0.9rem', 
+              fontWeight: 800,
+              bgcolor: '#22d3ee',
+              color: '#0e7490',
+              borderRadius: 2,
+              '&:hover': { bgcolor: '#06b6d4' }
+            }}
           >
-            Declare bankruptcy
-          </button>
-        </div>
-      ) : null}
-
-      <ActivityLogPanel entries={game.activityLog} />
-    </aside>
+            Roll dice
+          </Button>
+        </Box>
+      </Box>
+      
+      <Box sx={{ p: 1, display: 'flex', justifyContent: 'flex-end', bgcolor: '#cbd5e1' }}>
+        <Button 
+          sx={{ 
+            color: '#94a3b8', 
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            '&:hover': { color: '#64748b' }
+          }}
+          onClick={() => window.location.href = '/'}
+        >
+          EXIT
+        </Button>
+      </Box>
+    </Box>
   );
 }

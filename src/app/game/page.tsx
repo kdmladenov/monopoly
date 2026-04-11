@@ -1,13 +1,16 @@
 'use client';
 
-import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import GameBoard from '@/components/game/Board/GameBoard';
 import PropertyActionPanel from '@/components/game/Modals/PropertyActionPanel';
-import GameInfoPanel from '@/components/game/UI/GameInfoPanel';
 import TurnSidebar from '@/components/game/UI/TurnSidebar';
 import { useGameTurnController } from '@/hooks/useGameTurnController';
+import { Box, Container, Typography, Paper, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import InfoIcon from '@mui/icons-material/Info';
 
 export default function GamePage() {
+  const router = useRouter();
   const {
     game,
     currentPlayer,
@@ -26,52 +29,92 @@ export default function GamePage() {
     handleMortgageProperty,
     handleUnmortgageProperty,
   } = useGameTurnController();
+
+  useEffect(() => {
+    if (!game || game.board.length === 0) {
+      const timer = setTimeout(() => {
+        router.push('/setup');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [game, router]);
+
+  if (!game || game.board.length === 0) {
+    return (
+      <Box sx={{ minHeight: '100vh', bgcolor: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', gap: 2 }}>
+        <CircularProgress color="inherit" />
+        <Typography variant="h6">No game data found. Redirecting to setup...</Typography>
+      </Box>
+    );
+  }
+
   const auctionNextBidderName = game.auction.active
-    ? game.players.find((player) => player.id === game.auction.participants[game.auction.currentBidderIndex])?.name ?? null
+    ? game.players.find((p) => p.id === game.auction.participants[game.auction.currentBidderIndex])?.name ?? null
     : null;
 
   return (
-    <main className="min-h-screen px-6 py-10 text-white">
-      <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[1fr_320px]">
-        <section className="rounded-[2rem] border border-white/10 bg-[var(--panel)] p-4 shadow-2xl shadow-black/30 backdrop-blur-xl">
-          <div className="mb-4 flex items-center justify-between gap-4 px-2">
-            <div>
-              <p className="text-sm uppercase tracking-[0.22em] text-cyan-200">Game board</p>
-              <h1 className="text-3xl font-black">Worldopoly table</h1>
-            </div>
-            <Link href="/setup" className="rounded-full border border-white/15 px-4 py-2 text-sm transition hover:bg-white/8">
-              Back to setup
-            </Link>
-          </div>
+    <Box sx={{ height: '100vh', width: '100vw', bgcolor: '#94a3b8', display: 'flex', overflow: 'hidden' }}>
+      {/* Main Board Area - Stretched to edges */}
+      <Box sx={{ flexGrow: 1, height: '100vh', position: 'relative' }}>
+        <Box sx={{ width: '100%', height: '100%' }}>
+          <GameBoard 
+            board={game.board} 
+            players={game.players} 
+            lastDiceRoll={game.lastDiceRoll}
+          />
+        </Box>
 
-          <GameBoard board={game.board} players={game.players} />
+        {/* Action Button (Info Icon) moved to a floating position or stay underneath */}
+        <Box sx={{ position: 'absolute', bottom: 16, right: 16, zIndex: 1000 }}>
+          <Tooltip
+            title={
+              <Box sx={{ p: 1, maxWidth: 420 }}>
+                {landingOutcomeMessage && (
+                  <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fef3c7' }}>
+                    <Typography variant="body2">{landingOutcomeMessage}</Typography>
+                  </Paper>
+                )}
+                
+                <PropertyActionPanel
+                  board={game.board}
+                  square={activeLandingSquare}
+                  player={currentPlayer}
+                  enableAuctions={game.settings.enableAuctions}
+                  auctionNextBidderName={auctionNextBidderName}
+                  onBuy={handleLandingAction}
+                  onStartAuction={handleStartAuction}
+                  onPlaceAuctionBid={handlePlaceAuctionBid}
+                  onEndAuctionRound={handleEndAuctionRound}
+                  onBuildHouse={handleBuildHouse}
+                  onSellHouse={handleSellHouse}
+                  onMortgageProperty={handleMortgageProperty}
+                  onUnmortgageProperty={handleUnmortgageProperty}
+                />
+              </Box>
+            }
+            interactive
+            placement="left"
+          >
+            <IconButton 
+              sx={{ 
+                bgcolor: 'rgba(251, 191, 36, 0.1)', 
+                color: '#fcd34d',
+                width: 48,
+                height: 48,
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                boxShadow: 2,
+                backdropFilter: 'blur(4px)',
+                '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.2)' }
+              }}
+            >
+              <InfoIcon sx={{ fontSize: 24 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
-            <GameInfoPanel game={game} />
-
-            <PropertyActionPanel
-              board={game.board}
-              square={activeLandingSquare}
-              player={currentPlayer}
-              enableAuctions={game.settings.enableAuctions}
-              auctionNextBidderName={auctionNextBidderName}
-              onBuy={handleLandingAction}
-              onStartAuction={handleStartAuction}
-              onPlaceAuctionBid={handlePlaceAuctionBid}
-              onEndAuctionRound={handleEndAuctionRound}
-              onBuildHouse={handleBuildHouse}
-              onSellHouse={handleSellHouse}
-              onMortgageProperty={handleMortgageProperty}
-              onUnmortgageProperty={handleUnmortgageProperty}
-            />
-            {landingOutcomeMessage ? (
-              <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm text-amber-100">
-                {landingOutcomeMessage}
-              </div>
-            ) : null}
-          </div>
-        </section>
-
+      {/* Sidebar Area - Fixed exactly as in image */}
+      <Box sx={{ width: 140, height: '100vh', bgcolor: '#d1d5db', borderLeft: '1px solid #94a3b8' }}>
         <TurnSidebar
           game={game}
           currentPlayer={currentPlayer}
@@ -80,7 +123,7 @@ export default function GamePage() {
           onEndTurn={handleEndTurn}
           onDeclareBankruptcy={handleBankruptcy}
         />
-      </div>
-    </main>
+      </Box>
+    </Box>
   );
 }

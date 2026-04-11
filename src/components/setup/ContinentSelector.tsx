@@ -9,6 +9,7 @@ const continents = [
   { id: ContinentId.NORTH_AMERICA, label: 'North America', accent: 'from-emerald-500/30 to-teal-400/10' },
   { id: ContinentId.SOUTH_AMERICA, label: 'South America', accent: 'from-violet-500/30 to-fuchsia-400/10' },
   { id: ContinentId.OCEANIA, label: 'Oceania', accent: 'from-cyan-500/30 to-sky-400/10' },
+  { id: ContinentId.WORLD, label: 'World', accent: 'from-indigo-500/30 to-purple-400/10' },
 ];
 
 interface ContinentSelectorProps {

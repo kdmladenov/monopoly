@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import ReduxProvider from "@/components/ReduxProvider";
-import QueryProvider from "@/components/QueryProvider";
+import type { Metadata } from 'next';
+import './globals.css';
+import ReduxProvider from '@/components/ReduxProvider';
+import QueryProvider from '@/components/QueryProvider';
+import MuiProvider from '@/components/MuiProvider';
 
 export const metadata: Metadata = {
-  title: "Worldopoly",
-  description: "A continent-spanning strategy board game built with Next.js.",
+  title: 'Europoly',
+  description: 'A continent-spanning strategy board game built with Next.js.',
 };
 
 export default function RootLayout({
@@ -16,9 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <ReduxProvider>
-          <QueryProvider>{children}</QueryProvider>
-        </ReduxProvider>
+        <MuiProvider>
+          <ReduxProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </ReduxProvider>
+        </MuiProvider>
       </body>
     </html>
   );

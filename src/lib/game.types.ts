@@ -18,6 +18,7 @@ export enum ContinentId {
   NORTH_AMERICA = 'north-america',
   SOUTH_AMERICA = 'south-america',
   OCEANIA = 'oceania',
+  WORLD = 'world',
 }
 
 export enum PlayerType {

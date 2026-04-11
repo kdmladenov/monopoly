@@ -1,90 +1,111 @@
 import { BoardSquare, SquareType } from '@/lib/game.types';
+import { Box, Typography, Paper } from '@mui/material';
+import FlightIcon from '@mui/icons-material/Flight';
+import CasinoIcon from '@mui/icons-material/Casino';
+import LocalFloristIcon from '@mui/icons-material/LocalFlorist'; // for clover/lottery
+import BeachAccessIcon from '@mui/icons-material/BeachAccess'; // for palm tree
+import GavelIcon from '@mui/icons-material/Gavel'; // for go to jail
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied'; // for jail
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import LocalAtmIcon from '@mui/icons-material/LocalAtm';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'; // for motorway
+import SailingIcon from '@mui/icons-material/Sailing'; // for ferry
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
 interface Props {
   square: BoardSquare;
 }
 
 export default function BoardSquareView({ square }: Props) {
-  if (square.type === SquareType.PROPERTY && square.property) {
-    return (
-      <div className="flex h-full flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
-        <div>
-          <div
-            className="h-2 rounded-full"
-            style={{ backgroundColor: square.property.color ?? '#94a3b8' }}
-          />
-          <p className="mt-3 text-[0.72rem] uppercase tracking-[0.2em] text-cyan-200">
-            Property {square.position}
-          </p>
-          <p className="mt-2 text-sm font-semibold leading-tight text-white">
-            {square.property.name}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">{square.property.country}</p>
-        </div>
+  const isCorner = [0, 12, 20, 32].includes(square.position);
 
-        <div className="mt-3 flex items-end justify-between gap-2">
-          <p className="text-sm font-semibold text-emerald-200">
-            ¤{square.property.price}
-          </p>
-          {square.property.houses > 0 ? (
-            <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-emerald-100">
-              {square.property.houses === 5 ? 'Hotel' : `${square.property.houses} Houses`}
-            </span>
-          ) : (
-            <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-400">
-              Open
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const getIcon = () => {
+    if (square.type === SquareType.TRANSPORTATION) {
+      const tType = square.transportation?.type;
+      if (tType === 'airport') return <FlightIcon sx={{ fontSize: '1.2rem', color: '#64748b' }} />;
+      if (tType === 'motorway') return <DirectionsCarIcon sx={{ fontSize: '1.2rem', color: '#1e3a8a' }} />;
+      if (tType === 'ferry') return <SailingIcon sx={{ fontSize: '1.2rem', color: '#1e3a8a' }} />;
+    }
+    
+    if (square.type === SquareType.SPECIAL) {
+      const sType = square.special?.type;
+      if (sType === 'casino') return <CasinoIcon sx={{ fontSize: '1.2rem', color: '#ef4444' }} />;
+      if (sType === 'lottery') return <LocalFloristIcon sx={{ fontSize: '1.2rem', color: '#22c55e' }} />;
+      if (sType === 'tax') return <MonetizationOnIcon sx={{ fontSize: '1.2rem', color: '#92400e' }} />;
+      if (sType === 'freeParking' || square.position === 20) return <BeachAccessIcon sx={{ fontSize: '2rem', color: '#16a34a' }} />;
+      if (sType === 'goToJail' || square.position === 32) return <GavelIcon sx={{ fontSize: '2rem', color: '#1e293b' }} />;
+      if (sType === 'jail' || square.position === 12) return <SentimentVeryDissatisfiedIcon sx={{ fontSize: '2rem', color: '#1e293b' }} />;
+      if (sType === 'start' || square.position === 0) return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <PlayArrowIcon sx={{ fontSize: '1.5rem', color: '#16a34a' }} />
+          <LocalAtmIcon sx={{ fontSize: '1rem', color: '#16a34a' }} />
+        </Box>
+      );
+    }
+    return null;
+  };
 
-  if (square.type === SquareType.TRANSPORTATION && square.transportation) {
-    return (
-      <div className="flex h-full flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
-        <div>
-          <p className="text-[0.72rem] uppercase tracking-[0.2em] text-sky-200">
-            Transportation {square.position}
-          </p>
-          <p className="mt-2 text-sm font-semibold leading-tight text-white">
-            {square.transportation.name}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">{square.transportation.type}</p>
-        </div>
-
-        <div className="mt-3 flex items-end justify-between gap-2">
-          <p className="text-sm font-semibold text-sky-200">¤{square.transportation.price}</p>
-          <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-sky-100">
-            Rail/Route
-          </span>
-        </div>
-      </div>
-    );
-  }
+  const name = square.property?.name || square.transportation?.name || square.special?.name || 'Square';
+  const price = square.property?.price || square.transportation?.price || square.special?.amount;
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
-      <div>
-        <p className="text-[0.72rem] uppercase tracking-[0.2em] text-amber-200">
-          Special {square.position}
-        </p>
-        <p className="mt-2 text-sm font-semibold leading-tight text-white">
-          {square.special?.name ?? 'Special Tile'}
-        </p>
-        <p className="mt-1 text-xs text-slate-400">
-          {square.special?.type ?? 'special'}
-        </p>
-      </div>
+    <Box
+      sx={{
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'white',
+        border: '1px solid black',
+        borderRadius: 0,
+        overflow: 'hidden',
+        position: 'relative',
+        boxSizing: 'border-box',
+      }}
+    >
+      {square.type === SquareType.PROPERTY && square.property && (
+        <Box
+          sx={{
+            height: '22%',
+            bgcolor: square.property.color || '#ccc',
+            borderBottom: '1.5px solid black',
+          }}
+        />
+      )}
+      
+      <Box sx={{ p: 0.5, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: 'black', 
+            fontWeight: 900, 
+            fontSize: isCorner ? '0.75rem' : '0.6rem', 
+            textAlign: 'center', 
+            lineHeight: 1.1,
+            mt: 0.2
+          }}
+        >
+          {name}
+        </Typography>
 
-      <div className="mt-3 flex items-end justify-between gap-2">
-        <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-400">
-          {square.special?.type === 'start' ? 'Start' : 'Event'}
-        </span>
-        {square.special?.amount ? (
-          <p className="text-sm font-semibold text-amber-200">¤{square.special.amount}</p>
-        ) : null}
-      </div>
-    </div>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {getIcon()}
+        </Box>
+
+        {price !== undefined && (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: 'black', 
+              fontWeight: 800, 
+              fontSize: '0.65rem',
+              mb: 0.2
+            }}
+          >
+            {price.toLocaleString()}¤
+          </Typography>
+        )}
+      </Box>
+    </Box>
   );
 }
