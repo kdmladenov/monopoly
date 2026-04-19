@@ -14,9 +14,10 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
 interface Props {
   square: BoardSquare;
+  ownerColor?: string;
 }
 
-export default function BoardSquareView({ square }: Props) {
+export default function BoardSquareView({ square, ownerColor }: Props) {
   const pos = square.position;
   const isCorner = [0, 12, 20, 32].includes(pos);
 
@@ -83,6 +84,8 @@ export default function BoardSquareView({ square }: Props) {
 
   const name = square.property?.name || square.transportation?.name || square.special?.name || 'Square';
   const price = square.property?.price || square.transportation?.price || square.special?.amount;
+  const isMortgaged = (square.type === SquareType.PROPERTY && square.property?.isMortgaged) || 
+                      (square.type === SquareType.TRANSPORTATION && square.transportation?.isMortgaged);
 
   return (
     <Box
@@ -91,7 +94,7 @@ export default function BoardSquareView({ square }: Props) {
         width: '100%',
         display: 'flex',
         flexDirection,
-        bgcolor: 'white',
+        bgcolor: ownerColor ? `${ownerColor}4D` : 'white',
         border: '1px solid black',
         borderRadius: 0,
         overflow: 'hidden',
@@ -99,6 +102,42 @@ export default function BoardSquareView({ square }: Props) {
         boxSizing: 'border-box',
       }}
     >
+      {isMortgaged && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            pointerEvents: 'none',
+            bgcolor: 'rgba(255, 255, 255, 0.4)',
+          }}
+        >
+          <Typography
+            sx={{
+              color: '#dc2626',
+              fontWeight: 900,
+              fontSize: '0.5rem',
+              textTransform: 'uppercase',
+              transform: 'rotate(-45deg)',
+              border: '1px solid #dc2626',
+              px: 0.3,
+              borderRadius: 0.5,
+              whiteSpace: 'nowrap',
+              letterSpacing: 0.2,
+              bgcolor: 'white',
+              boxShadow: 1
+            }}
+          >
+            MORTGAGED
+          </Typography>
+        </Box>
+      )}
       {square.type === SquareType.PROPERTY && square.property && (
         <Box
           sx={{

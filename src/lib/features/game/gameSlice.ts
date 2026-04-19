@@ -14,6 +14,33 @@ import {
   TurnPhase,
 } from '@/lib/game.types';
 
+const performAuctionResolution = (state: any) => {
+  if (!state.auction.active || !state.auction.highestBidderId) {
+    state.auction.active = false;
+    state.turnPhase = TurnPhase.END_TURN;
+    return;
+  }
+
+  const winner = state.players.find((p: any) => p.id === state.auction.highestBidderId);
+  const square = state.board.find((s: any) => s.position === state.auction.propertyPosition);
+  
+  if (winner && square) {
+    winner.money -= state.auction.highestBid;
+    if (square.property) {
+      winner.ownedProperties.push(square.property.id);
+      square.property.ownerId = winner.id;
+    } else if (square.transportation) {
+      winner.ownedProperties.push(square.transportation.name);
+      square.transportation.ownerId = winner.id;
+    }
+    
+    state.activityLog.unshift(`${winner.name} won the auction for ${square.property?.name || square.transportation?.name} at ${state.auction.highestBid}¤`);
+  }
+
+  state.auction.active = false;
+  state.turnPhase = TurnPhase.END_TURN;
+};
+
 const gameSlice = createSlice({
   name: 'game',
   initialState: initialGameState,
@@ -32,28 +59,31 @@ const gameSlice = createSlice({
       state.currentPlayerIndex = action.payload;
     },
     startAuction(state, action: PayloadAction<{ propertyPosition: number }>) {
+      const square = state.board.find(s => s.position === action.payload.propertyPosition);
+      if (!square) return;
+      
+      const price = square.property?.price || square.transportation?.price || 0;
+      const initialBid = Math.floor(price * 0.1); // Start at 10% of value
+
       state.auction = {
         propertyPosition: action.payload.propertyPosition,
         active: true,
-        highestBid: 0,
+        highestBid: initialBid,
         highestBidderId: null,
-        minimumBid: 1,
+        minimumBid: initialBid + 10,
         currentBidderIndex: state.currentPlayerIndex,
         participants: state.players.filter((player) => !player.isBankrupt).map((player) => player.id),
+        bidHistory: [],
       };
-      state.turnPhase = TurnPhase.END_TURN;
     },
     placeAuctionBid(
       state,
-      action: PayloadAction<{ playerId: string; propertyPosition: number; amount: number }>
+      action: PayloadAction<{ playerId: string; amount: number }>
     ) {
-      if (!state.auction.active || state.auction.propertyPosition !== action.payload.propertyPosition) {
-        return;
-      }
-
-      if (state.auction.participants[state.auction.currentBidderIndex] !== action.payload.playerId) {
-        return;
-      }
+      if (!state.auction.active) return;
+      
+      const currentBidderId = state.auction.participants[state.auction.currentBidderIndex];
+      if (currentBidderId !== action.payload.playerId) return;
 
       const player = state.players.find((item) => item.id === action.payload.playerId);
       if (!player || player.money < action.payload.amount || action.payload.amount < state.auction.minimumBid) {
@@ -62,90 +92,38 @@ const gameSlice = createSlice({
 
       state.auction.highestBid = action.payload.amount;
       state.auction.highestBidderId = player.id;
-      state.auction.minimumBid = action.payload.amount + 1;
+      state.auction.minimumBid = action.payload.amount + 10; 
+      
+      state.auction.bidHistory.push({
+        playerId: player.id,
+        playerName: player.name,
+        amount: action.payload.amount,
+        timestamp: Date.now(),
+      });
+
       state.auction.currentBidderIndex = (state.auction.currentBidderIndex + 1) % state.auction.participants.length;
     },
-    endAuctionRound(state) {
-      if (!state.auction.active) {
-        return;
+    foldAuctionPlayer(state, action: PayloadAction<{ playerId: string }>) {
+      if (!state.auction.active) return;
+      
+      const pIndex = state.auction.participants.indexOf(action.payload.playerId);
+      if (pIndex === -1) return;
+
+      state.auction.participants.splice(pIndex, 1);
+      
+      if (state.auction.currentBidderIndex >= state.auction.participants.length) {
+        state.auction.currentBidderIndex = 0;
       }
 
-      const square = state.board.find((item) => item.position === state.auction.propertyPosition);
-      const property = square?.property;
-      if (!property || property.ownerId) {
+      if (state.auction.participants.length === 1 && state.auction.highestBidderId) {
+        performAuctionResolution(state);
+      } else if (state.auction.participants.length === 0) {
         state.auction.active = false;
         state.turnPhase = TurnPhase.END_TURN;
-        return;
       }
-
-      const winner =
-        state.players.find((player) => player.id === state.auction.highestBidderId) ??
-        state.players.find(
-          (player) => !player.isBankrupt && player.money >= (state.auction.highestBid || property.price)
-        );
-
-      if (!winner) {
-        state.auction.active = false;
-        state.turnPhase = TurnPhase.END_TURN;
-        return;
-      }
-
-      const winningBid = state.auction.highestBid || property.price;
-      if (winner.money < winningBid) {
-        state.auction.active = false;
-        state.turnPhase = TurnPhase.END_TURN;
-        return;
-      }
-
-      winner.money -= winningBid;
-      winner.ownedProperties.push(property.id);
-      property.ownerId = winner.id;
-      state.auction.highestBid = winningBid;
-      state.auction.highestBidderId = winner.id;
-      state.auction.active = false;
-      state.turnPhase = TurnPhase.END_TURN;
     },
     resolveAuction(state) {
-      if (!state.auction.active) {
-        return;
-      }
-
-      const square = state.board.find((item) => item.position === state.auction.propertyPosition);
-      const property = square?.property;
-      if (!property || property.ownerId) {
-        state.auction.active = false;
-        return;
-      }
-
-      const eligiblePlayers = state.players.filter(
-        (player) => !player.isBankrupt && player.money >= property.price
-      );
-
-      if (eligiblePlayers.length === 0) {
-        state.auction.active = false;
-        return;
-      }
-
-      const winner =
-        eligiblePlayers.find((player) => player.id === state.auction.highestBidderId) ??
-        eligiblePlayers.reduce((best, player) => {
-          const styleWeight =
-            player.aiStyle === AIStyle.AGGRESSIVE ? 3 : player.aiStyle === AIStyle.BALANCED ? 2 : 1;
-          const bestStyleWeight =
-            best.aiStyle === AIStyle.AGGRESSIVE ? 3 : best.aiStyle === AIStyle.BALANCED ? 2 : 1;
-          const playerScore = player.money + styleWeight * 1000;
-          const bestScore = best.money + bestStyleWeight * 1000;
-          return playerScore > bestScore ? player : best;
-        }, eligiblePlayers[0]);
-
-      const winningBid = state.auction.highestBid || property.price;
-      winner.money -= winningBid;
-      winner.ownedProperties.push(property.id);
-      property.ownerId = winner.id;
-      state.auction.highestBid = winningBid;
-      state.auction.highestBidderId = winner.id;
-      state.auction.active = false;
-      state.turnPhase = TurnPhase.END_TURN;
+      performAuctionResolution(state);
     },
     addActivityLog(state, action: PayloadAction<string>) {
       state.activityLog.unshift(action.payload);
@@ -216,17 +194,22 @@ const gameSlice = createSlice({
       const player = state.players.find((item) => item.id === action.payload.playerId);
       const square = state.board.find((item) => item.position === action.payload.propertyPosition);
 
-      if (!player || !square || square.type !== 'property' || !square.property) {
+      if (!player || !square) return;
+
+      if (square.type === 'property' && square.property) {
+        if (square.property.ownerId || player.money < square.property.price) return;
+        player.money -= square.property.price;
+        player.ownedProperties.push(square.property.id);
+        square.property.ownerId = player.id;
+      } else if (square.type === 'transportation' && square.transportation) {
+        if (square.transportation.ownerId || player.money < square.transportation.price) return;
+        player.money -= square.transportation.price;
+        player.ownedProperties.push(square.transportation.name);
+        square.transportation.ownerId = player.id;
+      } else {
         return;
       }
 
-      if (square.property.ownerId || player.money < square.property.price) {
-        return;
-      }
-
-      player.money -= square.property.price;
-      player.ownedProperties.push(square.property.id);
-      square.property.ownerId = player.id;
       state.turnPhase = TurnPhase.END_TURN;
     },
     payRent(
@@ -299,39 +282,48 @@ const gameSlice = createSlice({
       const player = state.players.find((item) => item.id === action.payload.playerId);
       const square = state.board.find((item) => item.position === action.payload.propertyPosition);
 
-      if (!player || !square || square.type !== 'property' || !square.property) {
+      if (!player || !square) return;
+
+      if (square.type === 'property' && square.property) {
+        const property = square.property;
+        if (property.ownerId !== player.id || property.houses > 0 || property.isMortgaged) return;
+        property.isMortgaged = true;
+        player.money += property.mortgageValue;
+      } else if (square.type === 'transportation' && square.transportation) {
+        const trans = square.transportation;
+        if (trans.ownerId !== player.id || trans.isMortgaged) return;
+        trans.isMortgaged = true;
+        player.money += trans.mortgageValue;
+      } else {
         return;
       }
 
-      const property = square.property;
-      if (property.ownerId !== player.id || property.houses > 0 || property.isMortgaged) {
-        return;
-      }
-
-      property.isMortgaged = true;
-      player.money += property.mortgageValue;
       state.turnPhase = TurnPhase.END_TURN;
     },
     unmortgageProperty(state, action: PayloadAction<MortgagePropertyPayload>) {
       const player = state.players.find((item) => item.id === action.payload.playerId);
       const square = state.board.find((item) => item.position === action.payload.propertyPosition);
 
-      if (!player || !square || square.type !== 'property' || !square.property) {
+      if (!player || !square) return;
+
+      if (square.type === 'property' && square.property) {
+        const property = square.property;
+        if (property.ownerId !== player.id || !property.isMortgaged) return;
+        const cost = Math.ceil(property.mortgageValue * 1.1);
+        if (player.money < cost) return;
+        property.isMortgaged = false;
+        player.money -= cost;
+      } else if (square.type === 'transportation' && square.transportation) {
+        const trans = square.transportation;
+        if (trans.ownerId !== player.id || !trans.isMortgaged) return;
+        const cost = Math.ceil(trans.mortgageValue * 1.1);
+        if (player.money < cost) return;
+        trans.isMortgaged = false;
+        player.money -= cost;
+      } else {
         return;
       }
 
-      const property = square.property;
-      if (property.ownerId !== player.id || !property.isMortgaged) {
-        return;
-      }
-
-      const cost = Math.ceil(property.mortgageValue * 1.1);
-      if (player.money < cost) {
-        return;
-      }
-
-      property.isMortgaged = false;
-      player.money -= cost;
       state.turnPhase = TurnPhase.END_TURN;
     },
     declareBankruptcy(state, action: PayloadAction<{ playerId: string }>) {
@@ -409,6 +401,51 @@ const gameSlice = createSlice({
       state.phase = GamePhase.ENDED;
       state.winner = action.payload;
     },
+    executeTrade(
+      state,
+      action: PayloadAction<{
+        proposerId: string;
+        targetId: string;
+        proposerOffer: { money: number; propertyIds: string[] };
+        targetOffer: { money: number; propertyIds: string[] };
+      }>
+    ) {
+      const { proposerId, targetId, proposerOffer, targetOffer } = action.payload;
+      const proposer = state.players.find((p) => p.id === proposerId);
+      const target = state.players.find((p) => p.id === targetId);
+
+      if (!proposer || !target) return;
+
+      // Transfer money
+      proposer.money -= proposerOffer.money;
+      target.money += proposerOffer.money;
+      target.money -= targetOffer.money;
+      proposer.money += targetOffer.money;
+
+      // Transfer proposer's properties to target
+      proposerOffer.propertyIds.forEach((propId) => {
+        proposer.ownedProperties = proposer.ownedProperties.filter((id) => id !== propId);
+        target.ownedProperties.push(propId);
+        const square = state.board.find(
+          (s) => s.property?.id === propId || s.transportation?.name === propId
+        );
+        if (square?.property) square.property.ownerId = targetId;
+        if (square?.transportation) square.transportation.ownerId = targetId;
+      });
+
+      // Transfer target's properties to proposer
+      targetOffer.propertyIds.forEach((propId) => {
+        target.ownedProperties = target.ownedProperties.filter((id) => id !== propId);
+        proposer.ownedProperties.push(propId);
+        const square = state.board.find(
+          (s) => s.property?.id === propId || s.transportation?.name === propId
+        );
+        if (square?.property) square.property.ownerId = proposerId;
+        if (square?.transportation) square.transportation.ownerId = proposerId;
+      });
+
+      state.turnPhase = TurnPhase.END_TURN;
+    },
     updateSettings(state, action: PayloadAction<Partial<GameSettings>>) {
       state.settings = { ...state.settings, ...action.payload };
     },
@@ -428,7 +465,7 @@ export const {
   setCurrentPlayerIndex,
   startAuction,
   placeAuctionBid,
-  endAuctionRound,
+  foldAuctionPlayer,
   resolveAuction,
   addActivityLog,
   rollDice,
@@ -443,6 +480,7 @@ export const {
   declareBankruptcy,
   resolveLandingEffect,
   payJailFine,
+  executeTrade,
   endTurn,
   declareWinner,
   updateSettings,

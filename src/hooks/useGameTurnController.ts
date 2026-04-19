@@ -12,7 +12,7 @@ import {
   movePlayer,
   mortgageProperty,
   payRent,
-  endAuctionRound,
+  foldAuctionPlayer,
   placeAuctionBid,
   purchaseProperty,
   startAuction,
@@ -23,7 +23,8 @@ import {
   payJailFine,
 } from '@/lib/features/game/gameSlice';
 import { selectSquareByPosition } from '@/lib/features/board/boardSelectors';
-import { GamePhase, PlayerType, TurnPhase } from '@/lib/game.types';
+import { getAIDecision } from '@/lib/ai/auctionAI';
+import { GamePhase, PlayerType, TurnPhase, AIStyle } from '@/lib/game.types';
 import { AIAdvisor } from '@/lib/ai/aiAdvisor';
 import { getLandingIntent } from '@/lib/turns/landingController';
 import { getLandingOutcomeMessage } from '@/lib/turns/landingPresentation';
@@ -197,38 +198,57 @@ export function useGameTurnController() {
   }, [activeLandingSquare, currentPlayer, dispatch, finishLanding, game.board, game.settings.enableAuctions]);
 
   const handleStartAuction = useCallback(() => {
-    if (!activeLandingSquare || activeLandingSquare.type !== 'property' || !activeLandingSquare.property) {
-      return;
-    }
+    if (!activeLandingSquare) return;
+    const prop = activeLandingSquare.property || activeLandingSquare.transportation;
+    if (!prop) return;
 
     dispatch(startAuction({ propertyPosition: activeLandingSquare.position }));
-    dispatch(addActivityLog(`Auction started for ${activeLandingSquare.property.name}.`));
+    dispatch(addActivityLog(`Auction started for ${prop.name}.`));
   }, [activeLandingSquare, dispatch]);
 
   const handlePlaceAuctionBid = useCallback((amount: number) => {
-    if (!currentPlayer || !activeLandingSquare || !activeLandingSquare.property) {
-      return;
-    }
+    const currentBidderId = game.auction.participants[game.auction.currentBidderIndex];
+    const bidder = game.players.find(p => p.id === currentBidderId);
+    if (!bidder) return;
 
     dispatch(
       placeAuctionBid({
-        playerId: currentPlayer.id,
-        propertyPosition: activeLandingSquare.position,
+        playerId: bidder.id,
         amount,
       })
     );
-    dispatch(addActivityLog(`${currentPlayer.name} bid ¤${amount}.`));
-  }, [activeLandingSquare, currentPlayer, dispatch]);
+    dispatch(addActivityLog(`${bidder.name} bid ${amount}¤.`));
+  }, [dispatch, game.auction, game.players]);
 
-  const handleEndAuctionRound = useCallback(() => {
-    if (activeLandingSquare?.property) {
-      dispatch(addActivityLog(`Auction round ended for ${activeLandingSquare.property.name}.`));
+  const handleFoldAuctionPlayer = useCallback((playerId: string) => {
+    dispatch(foldAuctionPlayer({ playerId }));
+    const p = game.players.find(player => player.id === playerId);
+    dispatch(addActivityLog(`${p?.name} folded and left the auction.`));
+  }, [dispatch, game.players]);
+
+  // AI Auction logic
+  useEffect(() => {
+    if (!game.auction.active) return;
+    
+    const currentBidderId = game.auction.participants[game.auction.currentBidderIndex];
+    const bidder = game.players.find(p => p.id === currentBidderId);
+    
+    if (bidder?.type === PlayerType.AI) {
+      const waitTime = bidder.aiStyle === AIStyle.CAUTIOUS ? 2000 : bidder.aiStyle === AIStyle.BALANCED ? 1500 : 1000;
+      
+      const timeout = setTimeout(() => {
+        const decision = getAIDecision(game, bidder);
+        
+        if (decision.type === 'bid') {
+          handlePlaceAuctionBid(decision.amount);
+        } else {
+          handleFoldAuctionPlayer(bidder.id);
+        }
+      }, waitTime);
+      
+      return () => clearTimeout(timeout);
     }
-    dispatch(endAuctionRound());
-    if (activeLandingSquare?.property) {
-      finishLanding(`Auction resolved for ${activeLandingSquare.property.name}.`);
-    }
-  }, [activeLandingSquare, dispatch, finishLanding]);
+  }, [game.auction, handlePlaceAuctionBid, handleFoldAuctionPlayer, game.players, game.board, game]);
 
   const handleBuildHouse = useCallback((propertyPosition: number) => {
     if (!currentPlayer) {
@@ -395,7 +415,6 @@ export function useGameTurnController() {
     handleLandingAction,
     handleStartAuction,
     handlePlaceAuctionBid,
-    handleEndAuctionRound,
     handleEndTurn,
     handleBuildHouse,
     handleSellHouse,
@@ -403,5 +422,6 @@ export function useGameTurnController() {
     handleUnmortgageProperty,
     handlePayJailFine,
     handleRollForJailEscape,
+    handleFoldAuctionPlayer,
   };
 }

@@ -177,6 +177,13 @@ export interface MortgagePropertyPayload {
   propertyPosition: number;
 }
 
+export interface AuctionBid {
+  playerId: string;
+  playerName: string;
+  amount: number;
+  timestamp: number;
+}
+
 export interface AuctionState {
   propertyPosition: number;
   active: boolean;
@@ -185,4 +192,5 @@ export interface AuctionState {
   minimumBid: number;
   currentBidderIndex: number;
   participants: string[];
+  bidHistory: AuctionBid[];
 }

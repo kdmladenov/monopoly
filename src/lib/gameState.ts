@@ -72,5 +72,6 @@ export const initialGameState: GameState = {
     minimumBid: 0,
     currentBidderIndex: 0,
     participants: [],
+    bidHistory: [],
   },
 };
