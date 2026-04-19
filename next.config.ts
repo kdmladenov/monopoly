@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   devIndicators: true,
   reactStrictMode: true,
   swcMinify: true,
+  async redirects() {
+    return [
+      {
+        source: '/setup',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

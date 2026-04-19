@@ -1,15 +1,25 @@
 'use client';
 
 import { ContinentId } from '@/lib/game.types';
+import { 
+  Box, 
+  Typography, 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  InputLabel,
+  Paper
+} from '@mui/material';
 
 const continents = [
-  { id: ContinentId.EUROPE, label: 'Europe', accent: 'from-blue-500/30 to-cyan-400/10' },
-  { id: ContinentId.ASIA, label: 'Asia', accent: 'from-amber-500/30 to-orange-400/10' },
-  { id: ContinentId.AFRICA, label: 'Africa', accent: 'from-orange-500/30 to-amber-400/10' },
-  { id: ContinentId.NORTH_AMERICA, label: 'North America', accent: 'from-emerald-500/30 to-teal-400/10' },
-  { id: ContinentId.SOUTH_AMERICA, label: 'South America', accent: 'from-violet-500/30 to-fuchsia-400/10' },
-  { id: ContinentId.OCEANIA, label: 'Oceania', accent: 'from-cyan-500/30 to-sky-400/10' },
-  { id: ContinentId.WORLD, label: 'World', accent: 'from-indigo-500/30 to-purple-400/10' },
+  { id: ContinentId.WORLD, label: 'World (Default)', accent: '#6366f1' },
+  { id: ContinentId.EUROPE, label: 'Europe', accent: '#3b82f6' },
+  { id: ContinentId.ASIA, label: 'Asia', accent: '#f59e0b' },
+  { id: ContinentId.AFRICA, label: 'Africa', accent: '#f97316' },
+  { id: ContinentId.NORTH_AMERICA, label: 'North America', accent: '#10b981' },
+  { id: ContinentId.SOUTH_AMERICA, label: 'South America', accent: '#8b5cf6' },
+  { id: ContinentId.OCEANIA, label: 'Oceania', accent: '#06b6d4' },
+  { id: ContinentId.CLASSIC, label: 'Classic Monopoly', accent: '#ef4444' },
 ];
 
 interface ContinentSelectorProps {
@@ -19,33 +29,60 @@ interface ContinentSelectorProps {
 
 export default function ContinentSelector({ selected, onSelect }: ContinentSelectorProps) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-      <h2 className="text-lg font-semibold">Continent</h2>
-      <p className="mt-2 text-sm text-slate-400">Pick the map style before the board is generated.</p>
+    <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        {continents.map((continent) => {
-          const isSelected = continent.id === selected;
-
-          return (
-            <button
-              key={continent.id}
-              onClick={() => onSelect(continent.id)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                isSelected
-                  ? 'border-cyan-300 bg-cyan-300/15 text-cyan-50 shadow-lg shadow-cyan-900/20'
-                  : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-              }`}
+      <FormControl fullWidth variant="filled" sx={{ 
+        bgcolor: 'rgba(255,255,255,0.05)', 
+        borderRadius: 2,
+        overflow: 'hidden',
+        '& .MuiFilledInput-root': {
+          bgcolor: 'transparent',
+          '&:before, &:after': { display: 'none' },
+          '&.Mui-focused': { bgcolor: 'rgba(255,255,255,0.08)' }
+        }
+      }}>
+        <Select
+          value={selected}
+          onChange={(e) => onSelect(e.target.value as ContinentId)}
+          displayEmpty
+          sx={{ color: 'white', fontWeight: 600 }}
+          MenuProps={{
+            disablePortal: true, // Fix positioning in blurred/transformed containers
+            sx: {
+              '& .MuiPaper-root': {
+                bgcolor: '#1e293b',
+                backgroundImage: 'none',
+                mt: 1,
+                border: '1px solid rgba(255,255,255,0.1)'
+              }
+            }
+          }}
+          renderValue={(selectedVal) => {
+            const cont = continents.find(c => c.id === selectedVal);
+            return (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                 <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: cont?.accent }} />
+                 {cont?.label}
+              </Box>
+            );
+          }}
+        >
+          {continents.map((continent) => (
+            <MenuItem 
+              key={continent.id} 
+              value={continent.id}
+              sx={{ 
+                py: 1.5, 
+                gap: 2,
+                '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.1)' }
+              }}
             >
-              <div className={`mb-3 h-2 rounded-full bg-gradient-to-r ${continent.accent}`} />
-              <p className="font-semibold">{continent.label}</p>
-              <p className="mt-1 text-xs text-slate-400">
-                {isSelected ? 'Selected' : 'Tap to choose'}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+              <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: continent.accent }} />
+              <Typography sx={{ fontWeight: 600 }}>{continent.label}</Typography>
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Box>
   );
 }

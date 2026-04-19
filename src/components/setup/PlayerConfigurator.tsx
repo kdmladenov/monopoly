@@ -1,15 +1,18 @@
-'use client';
-
 import { AIStyle, Player, PlayerType } from '@/lib/game.types';
-
-interface PlayerConfiguratorProps {
-  players: Player[];
-  maxPlayers: number;
-  onAddPlayer: () => void;
-  onAddAIPlayer: () => void;
-  onRemovePlayer: (playerId: string) => void;
-  onUpdatePlayer: (playerId: string, patch: Partial<Player>) => void;
-}
+import { 
+  Box, 
+  Typography, 
+  IconButton, 
+  Button, 
+  Select, 
+  MenuItem, 
+  Stack,
+  Chip,
+  InputBase
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import PersonIcon from '@mui/icons-material/Person';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 
 export default function PlayerConfigurator({
   players,
@@ -22,73 +25,134 @@ export default function PlayerConfigurator({
   const canAdd = players.length < maxPlayers;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">Players</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Configure the opening roster before starting the match.
-          </p>
-        </div>
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-          {players.length}/{maxPlayers}
-        </span>
-      </div>
+    <Box sx={{ p: 2.5, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 4, border: '1px solid rgba(255,255,255,0.05)' }}>
+      {/* ... (header) */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+           <Typography variant="h6" sx={{ fontWeight: 700 }}>Players</Typography>
+        </Box>
+        <Chip 
+          label={`${players.length} / ${maxPlayers}`} 
+          size="small" 
+          sx={{ bgcolor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontWeight: 700 }} 
+        />
+      </Box>
 
-      <div className="mt-4 space-y-3">
-        {players.map((player) => (
-          <div
-            key={player.id}
-            className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/5 px-4 py-3"
-          >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: player.color }} />
-                <p className="truncate font-medium">{player.name}</p>
-              </div>
-              <div className="mt-1 flex items-center gap-2 text-sm text-slate-400">
-                <span>{player.type === PlayerType.HUMAN ? 'Human' : 'AI'} player</span>
-                {player.type === PlayerType.AI && (
-                  <select
-                    value={player.aiStyle ?? AIStyle.BALANCED}
-                    onChange={(event) =>
-                      onUpdatePlayer(player.id, { aiStyle: event.target.value as AIStyle })
-                    }
-                    className="rounded-full border border-white/10 bg-slate-950/60 px-2 py-1 text-xs text-white"
-                  >
-                    <option value={AIStyle.CAUTIOUS}>Cautious</option>
-                    <option value={AIStyle.BALANCED}>Balanced</option>
-                    <option value={AIStyle.AGGRESSIVE}>Aggressive</option>
-                  </select>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => onRemovePlayer(player.id)}
-              className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300 transition hover:bg-white/10"
+      <Stack spacing={1.5}>
+        {players.map((player) => {
+          const isSelf = player.id === 'player_1';
+          const isAI = player.type === PlayerType.AI;
+          const canEditName = isSelf || isAI;
+
+          return (
+            <Box
+              key={player.id}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                bgcolor: 'rgba(255,255,255,0.05)',
+                p: 1.5,
+                borderRadius: 3,
+                border: '1px solid rgba(255,255,255,0.05)'
+              }}
             >
-              Remove
-            </button>
-          </div>
-        ))}
-      </div>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, flex: 1 }}>
+                <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: player.color, flexShrink: 0 }} />
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <InputBase
+                    value={player.name}
+                    disabled={!canEditName}
+                    onChange={(e) => onUpdatePlayer(player.id, { name: e.target.value })}
+                    sx={{ 
+                      color: 'white', 
+                      fontWeight: 700, 
+                      fontSize: '0.9rem',
+                      width: '100%',
+                      '& .MuiInputBase-input': { 
+                        py: 0,
+                        cursor: canEditName ? 'text' : 'default',
+                        '&.Mui-disabled': { WebkitTextFillColor: 'rgba(255,255,255,0.7)' }
+                      }
+                    }}
+                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                       {player.type === PlayerType.HUMAN ? 'HUMAN' : 'AI'}
+                     </Typography>
+                     {player.type === PlayerType.AI && (
+                       <Select
+                         size="small"
+                         value={player.aiStyle ?? AIStyle.BALANCED}
+                         onChange={(e) => onUpdatePlayer(player.id, { aiStyle: e.target.value as AIStyle })}
+                         sx={{ 
+                           ml: 1, 
+                           height: 20, 
+                           fontSize: '0.6rem', 
+                           bgcolor: 'rgba(255,255,255,0.05)',
+                           borderRadius: 0.5,
+                           '& .MuiSelect-select': { py: 0, px: 1 }
+                         }}
+                         MenuProps={{
+                           disablePortal: true,
+                           sx: {
+                             '& .MuiPaper-root': {
+                               bgcolor: '#1e293b',
+                               backgroundImage: 'none',
+                               border: '1px solid rgba(255,255,255,0.1)'
+                             }
+                           }
+                         }}
+                       >
+                         <MenuItem value={AIStyle.CAUTIOUS} sx={{ fontSize: '0.75rem' }}>Cautious</MenuItem>
+                         <MenuItem value={AIStyle.BALANCED} sx={{ fontSize: '0.75rem' }}>Balanced</MenuItem>
+                         <MenuItem value={AIStyle.AGGRESSIVE} sx={{ fontSize: '0.75rem' }}>Aggressive</MenuItem>
+                       </Select>
+                     )}
+                  </Box>
+                </Box>
+              </Box>
+              
+              <IconButton 
+                size="small" 
+                onClick={() => onRemovePlayer(player.id)}
+                disabled={isSelf} // Cannot remove self
+                sx={{ 
+                  ml: 1,
+                  color: 'rgba(255,255,255,0.3)', 
+                  '&:hover': { color: '#ef4444' },
+                  '&.Mui-disabled': { opacity: 0 } 
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          );
+        })}
+      </Stack>
 
-      <div className="mt-4 flex flex-wrap gap-3">
-        <button
-          onClick={onAddPlayer}
-          disabled={!canAdd}
-          className="rounded-full border border-white/15 px-4 py-2 text-sm transition hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Add player
-        </button>
-        <button
-          onClick={onAddAIPlayer}
-          disabled={!canAdd}
-          className="rounded-full border border-cyan-300/30 px-4 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Add AI
-        </button>
-      </div>
-    </div>
+      {canAdd && (
+        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<PersonIcon />}
+            onClick={onAddPlayer}
+            sx={{ borderRadius: 2, textTransform: 'none', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }}
+          >
+            Add Player
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<SmartToyIcon />}
+            onClick={onAddAIPlayer}
+            sx={{ borderRadius: 2, textTransform: 'none', borderColor: 'primary.main', borderOpacity: 0.3, color: 'primary.light' }}
+          >
+            Add AI
+          </Button>
+        </Box>
+      )}
+    </Box>
   );
 }

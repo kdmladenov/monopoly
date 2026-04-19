@@ -6,8 +6,10 @@ import GameBoard from '@/components/game/Board/GameBoard';
 import PropertyActionPanel from '@/components/game/Modals/PropertyActionPanel';
 import TurnSidebar from '@/components/game/UI/TurnSidebar';
 import { useGameTurnController } from '@/hooks/useGameTurnController';
-import { Box, Container, Typography, Paper, CircularProgress, IconButton, Tooltip, Dialog } from '@mui/material';
+import { Box, Container, Typography, Paper, CircularProgress, IconButton, Tooltip, Dialog, Button, Stack } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import LandActionDialog from '@/components/game/Modals/LandActionDialog';
 import JailActionDialog from '@/components/game/Modals/JailActionDialog';
 import { PlayerType, TurnPhase, AIStyle, Player } from '@/lib/game.types';
@@ -15,7 +17,7 @@ import { useState, useCallback, forwardRef, useMemo } from 'react';
 import TradeDialog from '@/components/game/Modals/TradeDialog';
 import AuctionDialog from '@/components/game/Modals/AuctionDialog';
 import { useDispatch } from 'react-redux';
-import { executeTrade, addActivityLog } from '@/lib/features/game/gameSlice';
+import { executeTrade, addActivityLog, resetGame } from '@/lib/features/game/gameSlice';
 import { canRoll, canEndTurn } from '@/lib/turns/turnController';
 
 const TooltipChild = forwardRef<HTMLSpanElement, any>((props, ref) => {
@@ -51,6 +53,7 @@ export default function GamePage() {
   const [isLandDialogOpen, setIsLandDialogOpen] = useState(false);
   const [isJailDialogOpen, setIsJailDialogOpen] = useState(false);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [inspectedSquarePosition, setInspectedSquarePosition] = useState<number | null>(null);
   const [tradeData, setTradeData] = useState<{ 
     open: boolean; 
@@ -131,10 +134,15 @@ export default function GamePage() {
     }
   }, [game.turnPhase, currentPlayer?.type, landingIntent?.kind]);
 
+  const handleExitGame = () => {
+    dispatch(resetGame());
+    router.push('/');
+  };
+
   useEffect(() => {
     if (!game || game.board.length === 0) {
       const timer = setTimeout(() => {
-        router.push('/setup');
+        router.push('/');
       }, 2000);
       return () => clearTimeout(timer);
     }
@@ -233,6 +241,69 @@ export default function GamePage() {
               onMortgageProperty={handleMortgageProperty}
               onUnmortgageProperty={handleUnmortgageProperty}
             />
+
+            <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                color="error"
+                startIcon={<ExitToAppIcon />}
+                onClick={() => setIsExitConfirmOpen(true)}
+                sx={{ 
+                  borderRadius: 2, 
+                  textTransform: 'none', 
+                  fontWeight: 700,
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                  '&:hover': { borderColor: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.05)' }
+                }}
+              >
+                Exit Game
+              </Button>
+            </Box>
+          </Box>
+        </Dialog>
+
+        {/* Exit Confirmation Dialog */}
+        <Dialog 
+          open={isExitConfirmOpen} 
+          onClose={() => setIsExitConfirmOpen(false)}
+          slotProps={{ 
+            paper: { 
+              sx: { 
+                bgcolor: '#0f172a', 
+                border: '1px solid #ef4444', 
+                color: 'white',
+                borderRadius: 3,
+                p: 1
+              } 
+            } 
+          }}
+        >
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <WarningAmberIcon sx={{ color: '#ef4444', fontSize: 48, mb: 2 }} />
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Exit Match?</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+              Current game progress will be lost. Are you sure you want to return to the home screen?
+            </Typography>
+            <Stack direction="row" spacing={2}>
+              <Button 
+                fullWidth 
+                variant="contained" 
+                color="error"
+                onClick={handleExitGame}
+                sx={{ borderRadius: 2, fontWeight: 700 }}
+              >
+                Yes, Exit
+              </Button>
+              <Button 
+                fullWidth 
+                variant="outlined" 
+                onClick={() => setIsExitConfirmOpen(false)}
+                sx={{ borderRadius: 2, color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}
+              >
+                Cancel
+              </Button>
+            </Stack>
           </Box>
         </Dialog>
 

@@ -141,7 +141,7 @@ export default function GameBoard({
         }}
       >
         {/* Player Stats at the TOP */}
-        <Box sx={{ display: 'flex', gap: 1, width: '100%', px: 1, justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, width: '100%', px: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
           {players.map((p, idx) => (
             <Paper key={p.id} elevation={idx === 0 ? 3 : 1} sx={{ 
               p: 0.5, 

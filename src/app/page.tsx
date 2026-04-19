@@ -1,123 +1,221 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Box, Container, Typography, Button, Paper, Stack } from '@mui/material';
-
-const highlights = [
-  'Choose a continent and reshape the board',
-  'Mix human and AI players in one session',
-  'Build, trade, and outlast everyone else',
-];
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/lib/store";
+import {
+  AIDifficulty,
+  AIStyle,
+  ContinentId,
+  PlayerType
+} from "@/lib/game.types";
+import {
+  setBoard,
+  setCurrentPlayerIndex,
+  setPlayers,
+  startGame
+} from "@/lib/features/game/gameSlice";
+import { BoardGenerator } from "@/lib/services/BoardGenerator";
+import ContinentSelector from "@/components/setup/ContinentSelector";
+import PlayerConfigurator from "@/components/setup/PlayerConfigurator";
+import {
+  Box,
+  Container,
+  Paper,
+  Typography,
+  Button,
+  Stack
+} from "@mui/material";
 
 export default function Home() {
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const currentPlayers = useSelector((state: RootState) => state.game.players);
+  const [continent, setContinent] = useState(ContinentId.WORLD);
+  const boardGenerator = useMemo(() => new BoardGenerator(), []);
+
+  const players = useMemo(
+    () =>
+      currentPlayers.map((player, index) => ({
+        ...player,
+        turnOrder: index
+      })),
+    [currentPlayers]
+  );
+
+  const PLAYER_COLORS = ["#FF8A00", "#00D1FF", "#00FF85", "#B000FF"];
+
+  const addPlayer = () => {
+    const nextIndex = players.length;
+    dispatch(
+      setPlayers([
+        ...players,
+        {
+          id: `player_${nextIndex + 1}`,
+          name: `Player ${nextIndex + 1}`,
+          type: PlayerType.HUMAN,
+          avatar: "token",
+          color: PLAYER_COLORS[nextIndex] || "#ffffff",
+          money: 40000,
+          position: 0,
+          isInJail: false,
+          jailTurns: 0,
+          consecutiveDoubles: 0,
+          ownedProperties: [],
+          isBankrupt: false,
+          turnOrder: nextIndex
+        }
+      ])
+    );
+  };
+
+  const addAIPlayer = () => {
+    const nextIndex = players.length;
+    dispatch(
+      setPlayers([
+        ...players,
+        {
+          id: `player_${nextIndex + 1}`,
+          name: `AI ${nextIndex + 1}`,
+          type: PlayerType.AI,
+          aiDifficulty: AIDifficulty.INTERMEDIATE,
+          aiStyle: AIStyle.BALANCED,
+          avatar: "globe",
+          color: PLAYER_COLORS[nextIndex] || "#ffffff",
+          money: 40000,
+          position: 0,
+          isInJail: false,
+          jailTurns: 0,
+          consecutiveDoubles: 0,
+          ownedProperties: [],
+          isBankrupt: false,
+          turnOrder: nextIndex
+        }
+      ])
+    );
+  };
+
+  const updatePlayer = (
+    playerId: string,
+    patch: Partial<(typeof players)[number]>
+  ) => {
+    dispatch(
+      setPlayers(
+        players.map((player) =>
+          player.id === playerId ? { ...player, ...patch } : player
+        )
+      )
+    );
+  };
+
+  const removePlayer = (playerId: string) => {
+    const nextPlayers = players
+      .filter((player) => player.id !== playerId)
+      .map((player, index) => ({
+        ...player,
+        turnOrder: index
+      }));
+
+    dispatch(setPlayers(nextPlayers));
+  };
+
+  const start = () => {
+    const board = boardGenerator.generateBoard(continent);
+    dispatch(setBoard(board));
+    dispatch(setCurrentPlayerIndex(0));
+    dispatch(startGame());
+    router.push("/game");
+  };
+
   return (
-    <Box sx={{ minHeight: '100vh', py: 10, px: 3, display: 'flex', alignItems: 'center', bgcolor: 'background.default' }}>
-      <Container maxWidth="lg">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        py: { xs: 3, md: 6 },
+        px: 2,
+        bgcolor: "#0f172a"
+      }} // Darker, cleaner bg
+    >
+      <Container maxWidth="md">
         <Paper
-          elevation={24}
+          elevation={0}
           sx={{
-            p: { xs: 4, md: 8 },
-            borderRadius: 8,
-            bgcolor: 'background.paper',
-            backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            p: { xs: 2.5, md: 4 }, // Much less padding
+            borderRadius: 4, // Softer corners
+            bgcolor: "rgba(30, 41, 59, 0.7)", // Glassmorphism-lite
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            backdropFilter: "blur(10px)"
           }}
         >
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 8, alignItems: 'center' }}>
-            <Box sx={{ flex: 1.2 }}>
-              <Stack spacing={4}>
-                <Typography
-                  variant="overline"
-                  sx={{
-                    color: 'primary.main',
-                    letterSpacing: 4,
-                    fontWeight: 800,
-                  }}
-                >
-                  EUROPOLY
-                </Typography>
-                <Typography variant="h2" sx={{ fontWeight: 900, lineHeight: 1.1 }}>
-                  A continent-spanning strategy game built for long, dramatic turns.
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', fontSize: '1.2rem' }}>
-                  Claim city groups, pressure opponents, and turn Europe into your personal empire. 
-                  Featuring a custom 13x9 board layout and MUI-powered interface.
-                </Typography>
-                <Stack direction="row" spacing={2}>
-                  <Button
-                    component={Link}
-                    href="/setup"
-                    variant="contained"
-                    size="large"
-                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem' }}
-                  >
-                    Start setup
-                  </Button>
-                  <Button
-                    component={Link}
-                    href="/game"
-                    variant="outlined"
-                    size="large"
-                    sx={{ px: 4, py: 1.5, fontSize: '1.1rem', color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}
-                  >
-                    View game board
-                  </Button>
-                </Stack>
-              </Stack>
-            </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              mb: 1
+            }}
+          >
+            {/* Header removed */}
+          </Box>
 
-            <Box sx={{ flex: 0.8, width: '100%' }}>
-              <Paper
-                sx={{
-                  p: 4,
-                  bgcolor: 'rgba(255,255,255,0.03)',
-                  borderRadius: 6,
-                  border: '1px solid rgba(255,255,255,0.05)',
-                }}
-              >
-                <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box>
-                    <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
-                      FOUNDATION STATUS
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      MUI Migration Ready
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      px: 2,
-                      py: 0.5,
-                      borderRadius: 99,
-                      bgcolor: 'rgba(52, 211, 153, 0.15)',
-                      color: '#a7f3d0',
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                    }}
-                  >
-                    v1.0
-                  </Box>
-                </Box>
-                <Stack spacing={2}>
-                  {highlights.map((item) => (
-                    <Paper
-                      key={item}
-                      sx={{
-                        p: 2,
-                        bgcolor: 'background.default',
-                        borderRadius: 4,
-                        border: '1px solid rgba(255,255,255,0.05)',
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {item}
-                      </Typography>
-                    </Paper>
-                  ))}
-                </Stack>
-              </Paper>
+          <Stack direction="column" spacing={3}>
+            <Box>
+              <ContinentSelector selected={continent} onSelect={setContinent} />
             </Box>
+            <Box>
+              <PlayerConfigurator
+                players={players}
+                maxPlayers={4}
+                onAddPlayer={addPlayer}
+                onAddAIPlayer={addAIPlayer}
+                onRemovePlayer={removePlayer}
+                onUpdatePlayer={updatePlayer}
+              />
+            </Box>
+          </Stack>
+
+          <Box
+            sx={{
+              mt: 4,
+              pt: 3,
+              borderTop: "1px solid rgba(255,255,255,0.05)",
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 2
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ color: "text.secondary", fontSize: "0.8rem" }}
+            >
+              Current Theme:{" "}
+              <Box
+                component="span"
+                sx={{ color: "primary.main", fontWeight: 600 }}
+              >
+                {continent.toUpperCase()}
+              </Box>
+            </Typography>
+            <Button
+              onClick={start}
+              variant="contained"
+              disabled={players.length < 2}
+              fullWidth={{ xs: true, sm: false } as any}
+              sx={{
+                px: 5,
+                py: 1.2,
+                fontSize: "1rem",
+                fontWeight: 800,
+                borderRadius: 3,
+                boxShadow: players.length < 2 ? 'none' : "0 8px 16px rgba(59, 130, 246, 0.2)"
+              }}
+            >
+              PLAY
+            </Button>
           </Box>
         </Paper>
       </Container>
