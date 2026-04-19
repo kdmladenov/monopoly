@@ -6,17 +6,35 @@ interface Props {
 }
 
 const offsets = [
-  'translate-x-0 translate-y-0',
-  'translate-x-3 translate-y-0',
-  'translate-x-0 translate-y-3',
-  'translate-x-3 translate-y-3',
+  'translate(0, 0)',
+  'translate(14px, 0)',
+  'translate(0, 14px)',
+  'translate(14px, 14px)',
 ];
 
 export default function PlayerPawn({ player, offset }: Props) {
   return (
     <div
-      className={`absolute left-1 top-1 z-20 h-5 w-5 rounded-full border border-white/70 shadow-lg shadow-black/30 ${offsets[offset % offsets.length]}`}
-      style={{ backgroundColor: player.color }}
+      className="absolute left-1.5 top-1.5 z-20"
+      style={{ 
+        width: '28px', // Larger chip
+        height: '28px',
+        borderRadius: '50%',
+        backgroundColor: player.color,
+        transform: offsets[offset % offsets.length],
+        transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+        boxShadow: `
+          inset -3px -3px 6px rgba(0,0,0,0.4), 
+          inset 3px 3px 6px rgba(255,255,255,0.4),
+          0 4px 8px rgba(0,0,0,0.6)
+        `,
+        backgroundImage: `
+          radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5) 0%, transparent 50%),
+          linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.2) 100%)
+        `,
+        border: '2px solid rgba(255,255,255,0.3)',
+        boxSizing: 'border-box'
+      }}
       title={player.name}
       aria-label={player.name}
     />

@@ -6,7 +6,7 @@ import GameBoard from '@/components/game/Board/GameBoard';
 import PropertyActionPanel from '@/components/game/Modals/PropertyActionPanel';
 import TurnSidebar from '@/components/game/UI/TurnSidebar';
 import { useGameTurnController } from '@/hooks/useGameTurnController';
-import { Box, Container, Typography, Paper, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import { Box, Container, Typography, Paper, CircularProgress, IconButton, Tooltip, Dialog } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
 import LandActionDialog from '@/components/game/Modals/LandActionDialog';
 import JailActionDialog from '@/components/game/Modals/JailActionDialog';
@@ -16,6 +16,7 @@ import TradeDialog from '@/components/game/Modals/TradeDialog';
 import AuctionDialog from '@/components/game/Modals/AuctionDialog';
 import { useDispatch } from 'react-redux';
 import { executeTrade, addActivityLog } from '@/lib/features/game/gameSlice';
+import { canRoll, canEndTurn } from '@/lib/turns/turnController';
 
 const TooltipChild = forwardRef<HTMLSpanElement, any>((props, ref) => {
   const { interactive, ...other } = props;
@@ -49,6 +50,7 @@ export default function GamePage() {
 
   const [isLandDialogOpen, setIsLandDialogOpen] = useState(false);
   const [isJailDialogOpen, setIsJailDialogOpen] = useState(false);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [inspectedSquarePosition, setInspectedSquarePosition] = useState<number | null>(null);
   const [tradeData, setTradeData] = useState<{ 
     open: boolean; 
@@ -157,63 +159,82 @@ export default function GamePage() {
       <Box sx={{ flexGrow: 1, height: '100vh', position: 'relative' }}>
         <Box sx={{ width: '100%', height: '100%' }}>
           <GameBoard 
-            board={game.board} 
-            players={game.players} 
+            board={game.board}
+            players={game.players}
             lastDiceRoll={game.lastDiceRoll}
             onSquareClick={handleSquareClick}
             onRollDice={handleRoll}
-            canRoll={game.turnPhase === TurnPhase.ROLL_DICE && currentPlayer?.type === PlayerType.HUMAN && !currentPlayer.isInJail}
+            onEndTurn={handleEndTurn}
+            onShowInfo={() => setIsOverviewOpen(true)}
+            canRoll={canRoll(game.turnPhase, game.phase)}
+            canEndTurn={canEndTurn(game.turnPhase)}
           />
         </Box>
 
-        {/* Action Button (Info Icon) moved to a floating position or stay underneath */}
-        <Box sx={{ position: 'absolute', bottom: 16, right: 16, zIndex: 1000 }}>
-          <Tooltip
-            title={
-              <Box sx={{ p: 1, maxWidth: 420 }}>
-                {landingOutcomeMessage && (
-                  <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fef3c7' }}>
-                    <Typography variant="body2">{landingOutcomeMessage}</Typography>
-                  </Paper>
-                )}
-                
-                <PropertyActionPanel
-                  board={game.board}
-                  square={activeLandingSquare}
-                  player={currentPlayer}
-                  enableAuctions={game.settings.enableAuctions}
-                  auctionNextBidderName={auctionNextBidderName}
-                  onBuy={handleLandingAction}
-                  onStartAuction={handleStartAuction}
-                  onPlaceAuctionBid={handlePlaceAuctionBid}
-                  onBuildHouse={handleBuildHouse}
-                  onSellHouse={handleSellHouse}
-                  onMortgageProperty={handleMortgageProperty}
-                  onUnmortgageProperty={handleUnmortgageProperty}
-                />
-              </Box>
-            }
-            interactive
-            placement="left"
-          >
-            <TooltipChild>
-              <IconButton 
-                sx={{ 
-                  bgcolor: 'rgba(251, 191, 36, 0.1)', 
-                  color: '#fcd34d',
-                  width: 48,
-                  height: 48,
-                  border: '1px solid rgba(251, 191, 36, 0.3)',
-                  boxShadow: 2,
-                  backdropFilter: 'blur(4px)',
-                  '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.2)' }
-                }}
-              >
-                <InfoIcon sx={{ fontSize: 24 }} />
-              </IconButton>
-            </TooltipChild>
-          </Tooltip>
+        <Box 
+          onClick={() => setIsOverviewOpen(true)}
+          sx={{ 
+            position: 'fixed', 
+            bottom: 0, 
+            right: 0, 
+            width: 30, 
+            height: 30, 
+            cursor: 'pointer',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'flex-end',
+            overflow: 'hidden',
+            transition: 'all 0.2s',
+            '&:hover': { opacity: 0.9, transform: 'scale(1.1)' },
+          }}
+        >
+          <svg width="30" height="30" viewBox="0 0 30 30">
+            <path d="M 30 0 L 30 30 L 0 30 Z" fill="#fcd34d" fillOpacity="0.8" />
+            <text x="21" y="26" fontSize="10" fontWeight="900" fill="#0f172a" fontFamily='"Roboto Condensed", sans-serif'>i</text>
+          </svg>
         </Box>
+
+        {/* Overview Dialog triggered by GameBoard center button */}
+        <Dialog 
+          open={isOverviewOpen} 
+          onClose={() => setIsOverviewOpen(false)}
+          slotProps={{ 
+            paper: { 
+              sx: { 
+                bgcolor: '#0f172a', 
+                border: '1px solid rgba(251, 191, 36, 0.3)', 
+                color: 'white',
+                maxWidth: 'calc(100vw - 32px)',
+                width: 360,
+                m: 2
+              } 
+            } 
+          }}
+        >
+          <Box sx={{ p: 1.5, width: '100%', boxSizing: 'border-box' }}>
+            {landingOutcomeMessage && (
+              <Paper sx={{ p: 2, mb: 2, bgcolor: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fef3c7' }}>
+                <Typography variant="body2">{landingOutcomeMessage}</Typography>
+              </Paper>
+            )}
+            
+            <PropertyActionPanel
+              board={game.board}
+              square={activeLandingSquare}
+              player={currentPlayer}
+              enableAuctions={game.settings.enableAuctions}
+              auctionNextBidderName={auctionNextBidderName}
+              onBuy={handleLandingAction}
+              onStartAuction={handleStartAuction}
+              onPlaceAuctionBid={handlePlaceAuctionBid}
+              onBuildHouse={handleBuildHouse}
+              onSellHouse={handleSellHouse}
+              onMortgageProperty={handleMortgageProperty}
+              onUnmortgageProperty={handleUnmortgageProperty}
+            />
+          </Box>
+        </Dialog>
 
         <LandActionDialog
           open={isLandDialogOpen || inspectedSquarePosition !== null}
@@ -266,9 +287,7 @@ export default function GamePage() {
             onUpdateBalance={(delta) => {
               setTradeData(prev => {
                 const newBalance = prev.balance + delta;
-                // Check if proposer has enough cash for positive balance
                 if (newBalance > 0 && prev.proposer && prev.proposer.money < newBalance) return prev;
-                // Check if target has enough cash for negative balance
                 if (newBalance < 0 && prev.target && prev.target.money < Math.abs(newBalance)) return prev;
                 return { ...prev, balance: newBalance };
               });
@@ -276,10 +295,8 @@ export default function GamePage() {
             onConfirmDeal={async () => {
               const { proposer, target, proposerProps, targetProps, balance } = tradeData;
               if (!proposer || !target) return { accepted: false };
-
               const pOffer = { money: balance > 0 ? balance : 0, propertyIds: proposerProps };
               const tOffer = { money: balance < 0 ? Math.abs(balance) : 0, propertyIds: targetProps };
-
               const calculateValue = (offer: any) => {
                 let val = offer.money;
                 offer.propertyIds.forEach((id: string) => {
@@ -289,10 +306,8 @@ export default function GamePage() {
                 });
                 return val;
               };
-
               const pVal = calculateValue(pOffer);
               const tVal = calculateValue(tOffer);
-
               if (target.type === PlayerType.AI) {
                 const multiplier = target.aiStyle === AIStyle.AGGRESSIVE ? 1.0 : target.aiStyle === AIStyle.BALANCED ? 1.2 : 1.4;
                 if (pVal >= tVal * multiplier) {
@@ -326,18 +341,6 @@ export default function GamePage() {
           onRollForEscape={handleRollForJailEscape}
           playerMoney={currentPlayer?.money ?? 0}
           fineAmount={1000}
-        />
-      </Box>
-
-      {/* Sidebar Area - Fixed exactly as in image */}
-      <Box sx={{ width: 140, height: '100vh', bgcolor: '#d1d5db', borderLeft: '1px solid #94a3b8' }}>
-        <TurnSidebar
-          game={game}
-          currentPlayer={currentPlayer}
-          bankruptPlayers={bankruptPlayers}
-          onRoll={handleRoll}
-          onEndTurn={handleEndTurn}
-          onDeclareBankruptcy={handleBankruptcy}
         />
       </Box>
     </Box>

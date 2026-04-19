@@ -22,7 +22,7 @@ export const initialGameState: GameState = {
   id: '',
   phase: GamePhase.SETUP,
   turnPhase: TurnPhase.ROLL_DICE,
-  continent: ContinentId.EUROPE,
+  continent: ContinentId.CLASSIC,
   board: [],
   players: [
     {

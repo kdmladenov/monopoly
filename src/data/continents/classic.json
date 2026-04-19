@@ -1,0 +1,102 @@
+{
+  "id": "classic",
+  "name": "Classic",
+  "displayName": "Classic Monopoly",
+  "theme": {
+    "primaryColor": "#c7e5cb",
+    "secondaryColor": "#1d4ed8",
+    "mapImage": "/assets/continents/classic/map.svg",
+    "startLandmark": "Go"
+  },
+  "priceMultiplier": 1,
+  "countries": [
+    {
+      "name": "Brown",
+      "color": "brown",
+      "cities": [
+        { "name": "Mediterranean Avenue", "price": 600, "rentBase": 20, "rent1House": 100, "rent2House": 300, "rent3House": 900, "rent4House": 1600, "rentHotel": 2500, "housePrice": 500, "mortgageValue": 300 },
+        { "name": "Baltic Avenue", "price": 600, "rentBase": 40, "rent1House": 200, "rent2House": 600, "rent3House": 1800, "rent4House": 3200, "rentHotel": 4500, "housePrice": 500, "mortgageValue": 300 }
+      ]
+    },
+    {
+      "name": "Light Blue",
+      "color": "lightBlue",
+      "cities": [
+        { "name": "Oriental Avenue", "price": 1000, "rentBase": 60, "rent1House": 300, "rent2House": 900, "rent3House": 2700, "rent4House": 4000, "rentHotel": 5500, "housePrice": 500, "mortgageValue": 500 },
+        { "name": "Vermont Avenue", "price": 1000, "rentBase": 60, "rent1House": 300, "rent2House": 900, "rent3House": 2700, "rent4House": 4000, "rentHotel": 5500, "housePrice": 500, "mortgageValue": 500 },
+        { "name": "Connecticut Avenue", "price": 1200, "rentBase": 80, "rent1House": 400, "rent2House": 1000, "rent3House": 3000, "rent4House": 4500, "rentHotel": 6000, "housePrice": 500, "mortgageValue": 600 }
+      ]
+    },
+    {
+      "name": "Pink",
+      "color": "purple",
+      "cities": [
+        { "name": "St. Charles Place", "price": 1400, "rentBase": 100, "rent1House": 500, "rent2House": 1500, "rent3House": 4500, "rent4House": 6250, "rentHotel": 7500, "housePrice": 1000, "mortgageValue": 700 },
+        { "name": "States Avenue", "price": 1400, "rentBase": 100, "rent1House": 500, "rent2House": 1500, "rent3House": 4500, "rent4House": 6250, "rentHotel": 7500, "housePrice": 1000, "mortgageValue": 700 },
+        { "name": "Virginia Avenue", "price": 1600, "rentBase": 120, "rent1House": 600, "rent2House": 1800, "rent3House": 5000, "rent4House": 7000, "rentHotel": 9000, "housePrice": 1000, "mortgageValue": 800 }
+      ]
+    },
+    {
+      "name": "Orange",
+      "color": "orange",
+      "cities": [
+        { "name": "St. James Place", "price": 1800, "rentBase": 140, "rent1House": 700, "rent2House": 2000, "rent3House": 5500, "rent4House": 7500, "rentHotel": 9500, "housePrice": 1000, "mortgageValue": 900 },
+        { "name": "Tennessee Avenue", "price": 1800, "rentBase": 140, "rent1House": 700, "rent2House": 2000, "rent3House": 5500, "rent4House": 7500, "rentHotel": 9500, "housePrice": 1000, "mortgageValue": 900 },
+        { "name": "New York Avenue", "price": 2000, "rentBase": 160, "rent1House": 800, "rent2House": 2200, "rent3House": 6000, "rent4House": 8000, "rentHotel": 10000, "housePrice": 1000, "mortgageValue": 1000 }
+      ]
+    },
+    {
+      "name": "Red",
+      "color": "red",
+      "cities": [
+        { "name": "Kentucky Avenue", "price": 2200, "rentBase": 180, "rent1House": 900, "rent2House": 2500, "rent3House": 7000, "rent4House": 8750, "rentHotel": 10500, "housePrice": 1500, "mortgageValue": 1100 },
+        { "name": "Indiana Avenue", "price": 2200, "rentBase": 180, "rent1House": 900, "rent2House": 2500, "rent3House": 7000, "rent4House": 8750, "rentHotel": 10500, "housePrice": 1500, "mortgageValue": 1100 },
+        { "name": "Illinois Avenue", "price": 2400, "rentBase": 200, "rent1House": 1000, "rent2House": 3000, "rent3House": 7500, "rent4House": 9250, "rentHotel": 11000, "housePrice": 1500, "mortgageValue": 1200 }
+      ]
+    },
+    {
+      "name": "Yellow",
+      "color": "yellow",
+      "cities": [
+        { "name": "Atlantic Avenue", "price": 2600, "rentBase": 220, "rent1House": 1100, "rent2House": 3300, "rent3House": 8000, "rent4House": 9750, "rentHotel": 11500, "housePrice": 1500, "mortgageValue": 1300 },
+        { "name": "Ventnor Avenue", "price": 2600, "rentBase": 220, "rent1House": 1100, "rent2House": 3300, "rent3House": 8000, "rent4House": 9750, "rentHotel": 11500, "housePrice": 1500, "mortgageValue": 1300 },
+        { "name": "Marvin Gardens", "price": 2800, "rentBase": 240, "rent1House": 1200, "rent2House": 3600, "rent3House": 8500, "rent4House": 10250, "rentHotel": 12000, "housePrice": 1500, "mortgageValue": 1400 }
+      ]
+    },
+    {
+      "name": "Green",
+      "color": "green",
+      "cities": [
+        { "name": "Pacific Avenue", "price": 3000, "rentBase": 260, "rent1House": 1300, "rent2House": 3900, "rent3House": 9000, "rent4House": 11000, "rentHotel": 12750, "housePrice": 2000, "mortgageValue": 1500 },
+        { "name": "North Carolina Avenue", "price": 3000, "rentBase": 260, "rent1House": 1300, "rent2House": 3900, "rent3House": 9000, "rent4House": 11000, "rentHotel": 12750, "housePrice": 2000, "mortgageValue": 1500 },
+        { "name": "Pennsylvania Avenue", "price": 3200, "rentBase": 280, "rent1House": 1500, "rent2House": 4500, "rent3House": 10000, "rent4House": 12000, "rentHotel": 15000, "housePrice": 2000, "mortgageValue": 1600 }
+      ]
+    },
+    {
+      "name": "Dark Blue",
+      "color": "darkBlue",
+      "cities": [
+        { "name": "Park Place", "price": 3500, "rentBase": 350, "rent1House": 1750, "rent2House": 5000, "rent3House": 11000, "rent4House": 13000, "rentHotel": 15000, "housePrice": 2000, "mortgageValue": 1750 },
+        { "name": "Boardwalk", "price": 4000, "rentBase": 500, "rent1House": 2000, "rent2House": 6000, "rent3House": 14000, "rent4House": 17000, "rentHotel": 20000, "housePrice": 2000, "mortgageValue": 2000 }
+      ]
+    }
+  ],
+  "transportation": [
+    { "type": "station", "name": "Reading Railroad", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "station", "name": "Pennsylvania Railroad", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "station", "name": "B. & O. Railroad", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "station", "name": "Short Line Railroad", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 }
+  ],
+  "specialSquares": [
+    { "type": "start", "name": "GO", "description": "COLLECT 2000¤ SALARY AS YOU PASS" },
+    { "type": "jail", "name": "JAIL", "description": "JUST VISITING" },
+    { "type": "goToJail", "name": "GO TO JAIL" },
+    { "type": "lottery", "name": "COMMUNITY CHEST" },
+    { "type": "lottery", "name": "CHANCE" },
+    { "type": "tax", "name": "INCOME TAX", "amount": 2000 },
+    { "type": "tax", "name": "LUXURY TAX", "amount": 1000 },
+    { "type": "freeParking", "name": "FREE PARKING" },
+    { "type": "lottery", "name": "COMMUNITY CHEST" },
+    { "type": "lottery", "name": "CHANCE" }
+  ]
+}

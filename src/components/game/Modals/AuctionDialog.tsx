@@ -74,15 +74,17 @@ export default function AuctionDialog({
     <Dialog
       open={open}
       maxWidth={false}
+      hideBackdrop={true}
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 3,
+            borderRadius: 2,
             bgcolor: "transparent",
             boxShadow: "none",
             backgroundImage: "none",
             p: 0,
-            overflow: "visible",
+            overflow: { xs: "auto", sm: "visible" },
+            maxHeight: '95vh'
           },
         },
       }}
@@ -90,24 +92,25 @@ export default function AuctionDialog({
       <Box
         sx={{
           display: "flex",
-          width: 900,
-          height: 520,
-          borderRadius: 4,
+          flexDirection: { xs: "column", sm: "row" },
+          width: { xs: 280, sm: 700 }, // Significantly narrower
+          borderRadius: 2,
           overflow: "hidden",
-          border: "4px solid black",
+          border: "3px solid black",
           bgcolor: "white",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
           fontFamily: "Arial, sans-serif",
         }}
       >
         {/* Left: Property Card */}
         <Box
           sx={{
-            width: 400,
-            p: 3,
+            width: { xs: "100%", sm: 300 },
+            p: 1.5,
             display: "flex",
             flexDirection: "column",
-            borderRight: "4px solid black",
+            borderRight: { xs: "none", sm: "3px solid black" },
+            borderBottom: { xs: "3px solid black", sm: "none" },
             bgcolor: "#fff",
             color: "black",
           }}
@@ -115,70 +118,70 @@ export default function AuctionDialog({
           <Box
             sx={{
               bgcolor: square.property?.color || "#fbbf24",
-              py: 1.5,
+              py: 0.8,
               textAlign: "center",
-              border: "3px solid black",
-              mb: 2,
+              border: "2px solid black",
+              mb: 1.5,
             }}
           >
-            <Typography variant="h4" sx={{ fontWeight: 600, color: "black", letterSpacing: 0.5, textTransform: "capitalize" }}>
-              {property.name.toLowerCase()}
+            <Typography variant="h6" sx={{ fontWeight: 800, color: "black", letterSpacing: 0.5, textTransform: "uppercase", fontSize: '0.8rem' }}>
+              {property.name}
             </Typography>
           </Box>
 
-          <Stack spacing={0.5} sx={{ flexGrow: 1, color: "black" }}>
+          <Stack spacing={0.4} sx={{ flexGrow: 1, color: "black" }}>
             {square.property ? (
-              <Stack spacing={0.5}>
+              <Stack spacing={0.4}>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: "1.6rem", fontWeight: 400, color: "black" }}>Land</Typography>
-                  <Typography sx={{ fontSize: "1.6rem", fontWeight: 400, color: "black" }}>{square.property.rentStructure.base}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>Land</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{square.property.rentStructure.base}¤</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>One house</Typography>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.property.rentStructure.house1}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>One house</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house1}¤</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Two houses</Typography>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.property.rentStructure.house2}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Two houses</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house2}¤</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Three houses</Typography>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.property.rentStructure.house3}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Three houses</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house3}¤</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Four houses</Typography>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.property.rentStructure.house4}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Four houses</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house4}¤</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Five houses</Typography>
-                  <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.property.rentStructure.hotel}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Five houses</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.hotel}¤</Typography>
                 </Box>
               </Stack>
             ) : (
-                <Stack spacing={1}>
+                <Stack spacing={0.5}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Rent (1 Terminal)</Typography>
-                        <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.transportation?.rent.one}¤</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Rent (1 Terminal)</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.transportation?.rent.one}¤</Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                        <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Rent (2 Terminals)</Typography>
-                        <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.transportation?.rent.two}¤</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Rent (2 Terminals)</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.transportation?.rent.two}¤</Typography>
                     </Box>
                 </Stack>
             )}
-            <Typography variant="body1" sx={{ mt: 2, fontSize: "1.1rem", lineHeight: 1.2, color: "black", maxWidth: '90%' }}>
+            <Typography variant="body2" sx={{ mt: 1, fontSize: "0.6rem", lineHeight: 1.1, color: "black", fontStyle: 'italic' }}>
               If a player owns all the cities with the same color, landing rent will be double
             </Typography>
           </Stack>
 
-          <Stack spacing={0.5} sx={{ mt: 1, color: "black" }}>
+          <Stack spacing={0.4} sx={{ mt: 1, color: "black" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography sx={{ fontSize: "1.6rem", color: "black" }}>House price</Typography>
-              <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{square.property?.housePrice || 0}¤</Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>House price</Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{square.property?.housePrice || 0}¤</Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-              <Typography sx={{ fontSize: "1.6rem", color: "black" }}>Mortgage value</Typography>
-              <Typography sx={{ fontSize: "1.6rem", color: "black" }}>{property.mortgageValue}¤</Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>Mortgage value</Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{property.mortgageValue}¤</Typography>
             </Box>
           </Stack>
         </Box>
@@ -189,31 +192,31 @@ export default function AuctionDialog({
             flex: 1,
             bgcolor: "#000",
             color: "white",
-            p: 4,
+            p: 2,
             display: "flex",
             flexDirection: "column",
           }}
         >
           {/* Top: Current High Bidder and History */}
-          <Box sx={{ display: "flex", gap: 3, mb: 4 }}>
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
             <Box sx={{ textAlign: "center" }}>
               <Paper
                 elevation={0}
                 sx={{
-                  p: 1,
-                  border: "2px solid #ccc",
-                  borderRadius: 2,
+                  p: 0.5,
+                  border: "1px solid #ccc",
+                  borderRadius: 1.5,
                   bgcolor: highestBidder?.color || "#d1d5db",
-                  width: 110,
-                  height: 110,
+                  width: 50,
+                  height: 50,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <PersonIcon sx={{ fontSize: 90, color: "white" }} />
+                <PersonIcon sx={{ fontSize: 40, color: "white" }} />
               </Paper>
-              <Typography variant="h5" sx={{ mt: 1, fontWeight: 700 }}>
+              <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 700, fontSize: '0.8rem' }}>
                 {activeAuction.highestBid.toLocaleString()}¤
               </Typography>
             </Box>
@@ -222,33 +225,33 @@ export default function AuctionDialog({
             <Box sx={{ 
               flexGrow: 1, 
               overflowY: "auto", 
-              maxHeight: 180, 
+              maxHeight: 120, 
             }}>
-              {activeAuction.bidHistory.slice().reverse().map((bid, i) => (
-                <Typography key={`bid-${bid.playerId}-${bid.amount}-${i}`} sx={{ fontSize: "1.3rem", textAlign: 'left', mb: 0.5 }}>
-                  {bid.playerName} offers {bid.amount.toLocaleString()}¤
+              {activeAuction.bidHistory.slice().reverse().slice(0, 5).map((bid, i) => (
+                <Typography key={`bid-${bid.playerId}-${bid.amount}-${i}`} sx={{ fontSize: "0.7rem", textAlign: 'left', mb: 0.2 }}>
+                  {bid.playerName}: {bid.amount.toLocaleString()}¤
                 </Typography>
               ))}
               {activeAuction.bidHistory.length === 0 && (
-                <Typography sx={{ opacity: 0.5, fontStyle: 'italic' }}>No offers yet</Typography>
+                <Typography sx={{ opacity: 0.5, fontStyle: 'italic', fontSize: '0.7rem' }}>No offers</Typography>
               )}
             </Box>
           </Box>
 
           {/* Middle: Current Player Turn */}
-          <Box sx={{ mt: "auto", mb: 4 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2, alignItems: 'center' }}>
-              <Typography variant="h4" sx={{ color: "#fbbf24", fontWeight: 500 }}>
+          <Box sx={{ mt: "auto", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, alignItems: 'center' }}>
+              <Typography sx={{ color: "#fbbf24", fontWeight: 700, fontSize: '0.9rem' }}>
                 {currentBidder?.name}
               </Typography>
-              <Typography variant="h4" sx={{ color: "#fbbf24", fontWeight: 500 }}>
+              <Typography sx={{ color: "#fbbf24", fontWeight: 800, fontSize: '0.9rem' }}>
                 {bidAmount.toLocaleString()}¤
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <IconButton onClick={() => setBidAmount(m => Math.max(activeAuction.minimumBid, m - 100))} sx={{ color: '#666' }}>
-                <ChevronLeftIcon sx={{ fontSize: 60 }} />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <IconButton onClick={() => setBidAmount(m => Math.max(activeAuction.minimumBid, m - 50))} sx={{ color: '#666', p: 0.2 }}>
+                <ChevronLeftIcon sx={{ fontSize: 30 }} />
               </IconButton>
               <Slider
                 value={bidAmount}
@@ -259,52 +262,51 @@ export default function AuctionDialog({
                 sx={{
                   color: "#333",
                   flexGrow: 1,
-                  height: 4,
+                  height: 3,
                   "& .MuiSlider-thumb": {
-                    width: 28,
-                    height: 28,
+                    width: 20,
+                    height: 20,
                     bgcolor: "white",
                     border: '1px solid black',
                   },
-                  "& .MuiSlider-rail": {
-                    opacity: 1,
-                    bgcolor: '#333',
-                  },
-                  "& .MuiSlider-track": {
-                    border: 'none',
-                  },
                 }}
               />
-              <IconButton onClick={() => setBidAmount(m => Math.min(currentBidder?.money || 100000, m + 100))} sx={{ color: '#ccc' }}>
-                <ChevronRightIcon sx={{ fontSize: 60 }} />
+              <IconButton onClick={() => setBidAmount(m => Math.min(currentBidder?.money || 100000, m + 50))} sx={{ color: '#ccc', p: 0.2 }}>
+                <ChevronRightIcon sx={{ fontSize: 30 }} />
               </IconButton>
             </Box>
           </Box>
 
           {/* Footer: Fold and Bid buttons */}
-          <Box sx={{ display: "flex", justifyContent: 'space-between', mt: 1 }}>
+          <Box sx={{ display: "flex", justifyContent: 'space-between', mt: 1, gap: 2 }}>
             <Button
               onClick={handleFoldClick}
+              fullWidth
+              variant="outlined"
               sx={{
                 color: "white",
-                fontSize: "1.8rem",
-                fontWeight: 400,
-                textTransform: "none",
-                p: 0,
-                "&:hover": { bgcolor: "transparent", color: "#666" },
+                borderColor: "#ef4444",
+                fontSize: "0.9rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                py: 0.8,
+                "&:hover": { bgcolor: "rgba(239, 68, 68, 0.1)", borderColor: "#ef4444" },
               }}
             >
               Fold
             </Button>
             <Button
               onClick={handleBidClick}
+              fullWidth
+              variant="contained"
               sx={{
+                bgcolor: "#16a34a",
                 color: "white",
-                fontSize: "1.8rem",
-                fontWeight: 400,
-                textTransform: "none",
-                p: 0,
-                "&:hover": { bgcolor: "transparent", color: "#666" },
+                fontSize: "0.9rem",
+                fontWeight: 900,
+                textTransform: "uppercase",
+                py: 0.8,
+                "&:hover": { bgcolor: "#15803d" },
               }}
             >
               Bid

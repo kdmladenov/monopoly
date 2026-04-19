@@ -68,17 +68,12 @@ export default function LandActionDialog({
   const owner = players?.find(p => p.id === ownerId);
   const contentBg = owner ? `${owner.color}4D` : "white";
 
-  const handleClose = (event: any, reason: "backdropClick" | "escapeKeyDown") => {
-    if (isLanding && (reason === "backdropClick" || reason === "escapeKeyDown")) {
-      return;
-    }
-    onClose();
-  };
 
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={onClose} // Always allow closing
+      hideBackdrop={true} // Remove the overlay
       maxWidth={false}
       slotProps={{
         paper: {
@@ -96,19 +91,23 @@ export default function LandActionDialog({
       <Box
         sx={{
           display: "flex",
-          alignItems: "flex-start",
+          flexDirection: { xs: "column", sm: "row" }, // Stack on mobile
+          alignItems: { xs: "center", sm: "flex-start" },
           gap: 2,
-          position: "relative"
+          p: 2,
+          position: "relative",
+          maxWidth: "100vw",
+          boxSizing: "border-box"
         }}
       >
         {/* The Card */}
         <Paper
           elevation={24}
           sx={{
-            width: 380,
+            width: { xs: 260, sm: 300 }, // Even smaller card
             bgcolor: "white",
-            borderRadius: 3,
-            border: "4px solid black",
+            borderRadius: 2,
+            border: "3px solid black",
             overflow: "hidden",
             color: "black",
             flexShrink: 0,
@@ -135,16 +134,16 @@ export default function LandActionDialog({
                 sx={{
                   color: "#dc2626",
                   fontWeight: 900,
-                  fontSize: "3rem",
+                  fontSize: "1.5rem",
                   textTransform: "uppercase",
                   transform: "rotate(-45deg)",
-                  border: "4px solid #dc2626",
-                  px: 2,
-                  borderRadius: 2,
+                  border: "2px solid #dc2626",
+                  px: 1,
+                  borderRadius: 1,
                   whiteSpace: "nowrap",
-                  letterSpacing: 2,
+                  letterSpacing: 1,
                   bgcolor: "white",
-                  boxShadow: 4
+                  boxShadow: 2
                 }}
               >
                 MORTGAGED
@@ -155,68 +154,68 @@ export default function LandActionDialog({
           <Box
             sx={{
               bgcolor: color,
-              py: 2,
+              py: 1, // Smaller header
               textAlign: "center",
-              borderBottom: "4px solid black"
+              borderBottom: "3px solid black"
             }}
           >
             <Typography
-              variant="h4"
-              sx={{ fontWeight: 800, letterSpacing: 1, color: "white" }}
+              variant="h6" // Smaller name
+              sx={{ fontWeight: 800, letterSpacing: 1, color: "white", fontSize: '0.9rem' }}
             >
               {name.toUpperCase()}
             </Typography>
           </Box>
 
-          <Box sx={{ p: 3, bgcolor: contentBg }}>
-            <Stack spacing={1}>
+          <Box sx={{ p: 1.5, bgcolor: contentBg }}>
+            <Stack spacing={0.5}>
               {property ? (
                 <>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Land</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Land</Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
                       {property.rentStructure.base}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">One house</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>One house</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {property.rentStructure.house1}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Two houses</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Two houses</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {property.rentStructure.house2}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Three houses</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Three houses</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {property.rentStructure.house3}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Four houses</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Four houses</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {property.rentStructure.house4}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Five houses</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Five houses</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {property.rentStructure.hotel}¤
                     </Typography>
                   </Box>
@@ -226,32 +225,32 @@ export default function LandActionDialog({
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Rent (1 Terminal)</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Rent (1 Terminal)</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {transportation.rent.one}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Rent (2 Terminals)</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Rent (2 Terminals)</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {transportation.rent.two}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Rent (3 Terminals)</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Rent (3 Terminals)</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {transportation.rent.three}¤
                     </Typography>
                   </Box>
                   <Box
                     sx={{ display: "flex", justifyContent: "space-between" }}
                   >
-                    <Typography variant="h6">Rent (4 Terminals)</Typography>
-                    <Typography variant="h6">
+                    <Typography sx={{ fontSize: '0.75rem' }}>Rent (4 Terminals)</Typography>
+                    <Typography sx={{ fontSize: '0.75rem' }}>
                       {transportation.rent.four}¤
                     </Typography>
                   </Box>
@@ -260,33 +259,32 @@ export default function LandActionDialog({
             </Stack>
 
             <Typography
-              variant="body2"
-              sx={{ my: 3, fontStyle: "italic", lineHeight: 1.2 }}
+              sx={{ my: 1.5, fontStyle: "italic", lineHeight: 1.1, fontSize: '0.6rem' }}
             >
               {property
                 ? "If a player owns all the cities with the same color, landing rent will be double"
                 : "Rent is based on the number of transportation terminals owned."}
             </Typography>
 
-            <Divider sx={{ borderColor: "black", mb: 2 }} />
+            <Divider sx={{ borderColor: "black", mb: 1 }} />
 
-            <Stack spacing={1}>
+            <Stack spacing={0.5}>
               {property && (
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="h6">House price</Typography>
-                  <Typography variant="h6">{housePrice}¤</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>House price</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{housePrice}¤</Typography>
                 </Box>
               )}
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography variant="h6">Mortgage value</Typography>
-                <Typography variant="h6">{mortgageValue}¤</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Mortgage value</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{mortgageValue}¤</Typography>
               </Box>
             </Stack>
           </Box>
         </Paper>
 
         {/* The Action Buttons */}
-        <Stack spacing={2} sx={{ mt: 5, width: 220 }}>
+        <Stack spacing={1} sx={{ mt: { xs: 0, sm: 5 }, width: { xs: 240, sm: 180 } }}>
           {/* Buy/Auction only if landed and unowned */}
           {isLanding && !property?.ownerId && !transportation?.ownerId && (
             <>
@@ -299,10 +297,10 @@ export default function LandActionDialog({
                 sx={{
                   bgcolor: "black",
                   color: "white",
-                  fontSize: "1.25rem",
+                  fontSize: "1rem",
                   fontWeight: 900,
-                  py: 1.5,
-                  borderRadius: 2,
+                  py: 1,
+                  borderRadius: 1.5,
                   "&:hover": { bgcolor: "#333" }
                 }}
               >
@@ -319,10 +317,10 @@ export default function LandActionDialog({
                   sx={{
                     bgcolor: "black",
                     color: "white",
-                    fontSize: "1.25rem",
+                    fontSize: "1rem",
                     fontWeight: 900,
-                    py: 1.5,
-                    borderRadius: 2,
+                    py: 1,
+                    borderRadius: 1.5,
                     "&:hover": { bgcolor: "#333" }
                   }}
                 >
@@ -345,7 +343,7 @@ export default function LandActionDialog({
                       onClick={() => onBuildHouse?.(square.position)}
                       disabled={player.money < property.housePrice || property.houses >= 5}
                       variant="contained"
-                      sx={{ bgcolor: "black", fontWeight: 700 }}
+                      sx={{ bgcolor: "black", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                     >
                       BUILD HOUSE (+{property.housePrice}¤)
                     </Button>
@@ -356,7 +354,7 @@ export default function LandActionDialog({
                     <Button
                       onClick={() => onSellHouse?.(square.position)}
                       variant="contained"
-                      sx={{ bgcolor: "black", fontWeight: 700 }}
+                      sx={{ bgcolor: "black", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                     >
                       SELL HOUSE (+{Math.floor(property.housePrice / 2)}¤)
                     </Button>
@@ -367,7 +365,7 @@ export default function LandActionDialog({
                     <Button
                       onClick={() => onMortgage?.(square.position)}
                       variant="contained"
-                      sx={{ bgcolor: "black", color: "white", fontWeight: 700 }}
+                      sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                     >
                       MORTGAGE (+{property.mortgageValue}¤)
                     </Button>
@@ -378,7 +376,7 @@ export default function LandActionDialog({
                   onClick={() => onUnmortgage?.(square.position)}
                   disabled={player.money < Math.ceil(property.mortgageValue * 1.1)}
                   variant="contained"
-                  sx={{ bgcolor: "black", color: "white", fontWeight: 700 }}
+                  sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                 >
                   UNMORTGAGE (-{Math.ceil(property.mortgageValue * 1.1)}¤)
                 </Button>
@@ -393,7 +391,7 @@ export default function LandActionDialog({
                 <Button
                   onClick={() => onMortgage?.(square.position)}
                   variant="contained"
-                  sx={{ bgcolor: "black", color: "white", fontWeight: 700 }}
+                  sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                 >
                   MORTGAGE (+{transportation.mortgageValue}¤)
                 </Button>
@@ -402,7 +400,7 @@ export default function LandActionDialog({
                   onClick={() => onUnmortgage?.(square.position)}
                   disabled={player.money < Math.ceil(transportation.mortgageValue * 1.1)}
                   variant="contained"
-                  sx={{ bgcolor: "black", color: "white", fontWeight: 700 }}
+                  sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                 >
                   UNMORTGAGE (-{Math.ceil(transportation.mortgageValue * 1.1)}¤)
                 </Button>
@@ -415,26 +413,12 @@ export default function LandActionDialog({
             <Button
               onClick={() => onProposeDeal?.(ownerId)}
               variant="contained"
-              sx={{ bgcolor: "black", color: "white", fontWeight: 700 }}
+              sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
             >
               PROPOSE DEAL
             </Button>
           )}
 
-          {!isLanding && (
-            <Button
-              onClick={onClose}
-              variant="outlined"
-              sx={{
-                borderColor: "black",
-                color: "black",
-                fontWeight: 700,
-                "&:hover": { borderColor: "#333", bgcolor: "rgba(0,0,0,0.05)" }
-              }}
-            >
-              BACK
-            </Button>
-          )}
         </Stack>
       </Box>
     </Dialog>

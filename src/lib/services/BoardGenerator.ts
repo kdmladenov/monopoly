@@ -34,16 +34,20 @@ export class BoardGenerator {
       let type: SquareType = SquareType.SPECIAL;
       let data: any = null;
 
-      // Corner Assignments
-      if (i === 0) data = specials.find((s: any) => s.type === 'start') || { name: 'START', type: 'start' };
-      else if (i === 12) data = specials.find((s: any) => s.type === 'jail') || { name: 'JAIL', type: 'jail' };
-      else if (i === 20) data = specials.find((s: any) => s.type === 'freeParking') || { name: 'FREE PARKING', type: 'freeParking' };
-      else if (i === 32) data = specials.find((s: any) => s.type === 'goToJail') || { name: 'GO TO JAIL', type: 'goToJail' };
-      
-      // Transportation Slots (5, 15, 25, 35)
-      else if ([5, 15, 25, 35].includes(i)) {
+      // Corner Assignments (6x16: 0, 5, 20, 25)
+      if (i === 0) data = specials.find((s: any) => s.type === 'start') || { name: 'GO', type: 'start' };
+      else if (i === 5) {
         type = SquareType.TRANSPORTATION;
-        const tIndex = [5, 15, 25, 35].indexOf(i);
+        data = transportation[0] || { name: 'Station', type: 'station', price: 2000 };
+      }
+      else if (i === 20) data = specials.find((s: any) => s.type === 'jail') || { name: 'JAIL', type: 'jail' };
+      else if (i === 25) data = specials.find((s: any) => s.type === 'freeParking') || { name: 'FREE PARKING', type: 'freeParking' };
+      else if (i === 19) data = specials.find((s: any) => s.type === 'goToJail') || { name: 'GO TO JAIL', type: 'goToJail' };
+      
+      // Other Transportation (15, 25(taken), 35)
+      else if ([15, 35].includes(i)) {
+        type = SquareType.TRANSPORTATION;
+        const tIndex = i === 15 ? 1 : 3;
         data = transportation[tIndex] || { name: 'Station', type: 'station', price: 2000 };
       }
       
