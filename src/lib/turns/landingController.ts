@@ -72,7 +72,7 @@ export function getLandingIntent(
               effect: effectType,
               amount: Math.abs(option.amount),
             },
-            message: `${currentPlayer.name}: ${option.message} (${option.amount >= 0 ? '+' : ''}${option.amount}¤)`,
+            message: `${currentPlayer.name}: ${option.message} (${option.amount >= 0 ? '+' : ''}${option.amount})`,
           };
         }
       case 'freeParking':
@@ -95,7 +95,7 @@ export function getLandingIntent(
         kind: 'pay-rent',
         toPlayerId: transportation.ownerId,
         amount,
-        message: `${currentPlayer.name} paid route rent of ¤${amount}.`,
+        message: `${currentPlayer.name} paid route rent of ${amount}.`,
       };
     }
     if (!transportation.ownerId) {
@@ -118,7 +118,7 @@ export function getLandingIntent(
         kind: 'pay-rent',
         toPlayerId: property.ownerId,
         amount,
-        message: `${currentPlayer.name} paid ¤${amount} rent to ${property.ownerId}.`,
+        message: `${currentPlayer.name} paid ${amount} rent to ${property.ownerId}.`,
       };
     }
 

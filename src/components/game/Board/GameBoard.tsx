@@ -3,14 +3,15 @@
 import { BoardSquare, DiceRoll } from '@/lib/game.types';
 import BoardSquareView from './BoardSquareView';
 import PlayerPawn from './PlayerPawn';
+import AnimatedPawn from './AnimatedPawn';
 import { Player } from '@/lib/game.types';
 import { Box, Typography, Paper, IconButton } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
 
 interface Props {
   board: BoardSquare[];
   players: Player[];
   lastDiceRoll: { die1: number; die2: number } | null;
+  animationSpeed?: number;
   onSquareClick?: (pos: number) => void;
   onRollDice?: () => void;
   onEndTurn?: () => void;
@@ -23,6 +24,7 @@ export default function GameBoard({
   board, 
   players, 
   lastDiceRoll, 
+  animationSpeed = 0.6,
   onSquareClick, 
   onRollDice, 
   onEndTurn,
@@ -90,15 +92,27 @@ export default function GameBoard({
     return (
       <Box
         sx={{
-          width: 44,
-          height: 44,
-          bgcolor: 'white',
-          border: '1px solid #ccc',
-          borderRadius: 1,
+          width: 42,
+          height: 42,
+          bgcolor: '#f8f9fa',
+          border: '1px solid #dee2e6',
+          borderRadius: 2,
           display: 'flex',
           flexWrap: 'wrap',
-          p: 0.5,
-          boxShadow: '2px 2px 4px rgba(0,0,0,0.1)',
+          p: 0.6,
+          // Deepened 3D Insets and shadows
+          boxShadow: `
+            0 6px 12px rgba(0,0,0,0.4),
+            inset 2px 2px 5px rgba(255,255,255,0.9),
+            inset -4px -4px 8px rgba(0,0,0,0.25),
+            inset 0 0 12px rgba(0,0,0,0.1)
+          `,
+          // Dual shading (Top-Left and Top-Right light sources)
+          backgroundImage: `
+            linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%),
+            linear-gradient(225deg, rgba(255,255,255,0.2) 0%, transparent 40%)
+          `,
+          position: 'relative'
         }}
       >
         {pips}
@@ -110,7 +124,7 @@ export default function GameBoard({
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(6, 1fr)',
+        gridTemplateColumns: '1.5fr repeat(4, 1fr) 1.5fr',
         gridTemplateRows: '1.5fr repeat(14, 1fr) 1.5fr', // Proportional corners
         width: '100vw',
         height: '100vh',
@@ -126,11 +140,18 @@ export default function GameBoard({
         boxSizing: 'border-box'
       }}
     >
-      {/* Center Area */}
+      {/* Center Area with Recessed Effect */}
       <Box
         sx={{
           gridArea: '2 / 2 / 16 / 6', 
-          bgcolor: 'transparent',
+          bgcolor: '#c6e6d5', // Solid floor color
+          // Sophisticated layered shadows for a high-end 3D board
+          boxShadow: `
+            inset 0 12px 24px rgba(0,0,0,0.1),
+            inset 0 -8px 16px rgba(0,0,0,0.06),
+            inset 8px 0 16px rgba(0,0,0,0.04),
+            inset -8px 0 16px rgba(0,0,0,0.04)
+          `, 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -138,28 +159,77 @@ export default function GameBoard({
           pt: 1.5,
           pb: 1.5,
           position: 'relative',
+          overflow: 'hidden', // Contain the texture overlay
+          border: '1px solid rgba(0,0,0,0.1)',
+          borderRadius: '2px',
+          m: 0.2,
+          // Premium Felt/Texture Overlay
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.1,
+            backgroundImage: 'url("https://www.transparenttextures.com/patterns/fabric-of-squares.png")',
+            pointerEvents: 'none',
+          },
+          // Center Highlight
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.25) 0%, transparent 80%)',
+            pointerEvents: 'none',
+          }
         }}
       >
-        {/* Player Stats at the TOP */}
-        <Box sx={{ display: 'flex', gap: 1, width: '100%', px: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+        {/* Player Stats at the TOP - Single Line */}
+        <Box sx={{ 
+          display: 'flex', 
+          gap: 0.4, 
+          width: '100%', 
+          px: 0.5, 
+          justifyContent: 'center', 
+          flexWrap: 'nowrap', // Force single line
+          boxSizing: 'border-box'
+        }}>
           {players.map((p, idx) => (
-            <Paper key={p.id} elevation={idx === 0 ? 3 : 1} sx={{ 
-              p: 0.5, 
-              width: 70, 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              border: `2px solid ${p.color}`,
-              bgcolor: 'rgba(255,255,255,0.95)',
-              borderRadius: 1.5,
-              transition: 'all 0.2s',
-              transform: idx === 0 ? 'scale(1.05)' : 'none'
-            }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.1 }}>
-                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: p.color }} />
-                <Typography sx={{ fontWeight: 800, fontSize: '0.45rem', color: 'black', textTransform: 'uppercase', fontFamily: '"Roboto Condensed", sans-serif', maxWidth: 50, overflow: 'hidden', whiteSpace: 'nowrap' }}>{p.name}</Typography>
+            <Paper 
+              key={p.id} 
+              elevation={idx === 0 ? 3 : 1} 
+              sx={{ 
+                p: 0.4, 
+                flex: '1 1 0', // Equal width distribution
+                maxWidth: 80,
+                minWidth: 50,
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                border: `1.5px solid ${p.color}`,
+                bgcolor: `${p.color}40`, // Consistent 25% opacity with property ownership
+                borderRadius: 1,
+                transition: 'all 0.2s',
+                transform: idx === 0 ? 'scale(1.03)' : 'none',
+                overflow: 'hidden'
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, width: '100%', justifyContent: 'center' }}>
+                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: p.color, flexShrink: 0 }} />
+                <Typography sx={{ 
+                  fontWeight: 800, 
+                  fontSize: '0.42rem', 
+                  color: 'black', 
+                  textTransform: 'uppercase', 
+                  fontFamily: '"Roboto Condensed", sans-serif',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
+                  {p.name}
+                </Typography>
               </Box>
-              <Typography sx={{ fontWeight: 900, fontSize: '0.65rem', color: '#16a34a' }}>{p.money.toLocaleString()}¤</Typography>
+              <Typography sx={{ fontWeight: 900, fontSize: '0.65rem', color: 'black' }}>
+                {p.money.toLocaleString()}
+              </Typography>
             </Paper>
           ))}
         </Box>
@@ -183,15 +253,27 @@ export default function GameBoard({
                   color: 'white',
                   border: '2px solid white',
                   outline: '1px solid black',
-                  borderRadius: 2.5,
+                  borderRadius: 3,
                   width: '100%',
-                  py: 1,
+                  py: 1.2,
                   fontWeight: 900,
-                  fontSize: '1.2rem',
+                  fontSize: '1.3rem',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                  // Internal 3D Insets only (no bulky bottom shadow)
+                  boxShadow: `
+                    0 4px 10px rgba(0,0,0,0.3),
+                    inset 0 4px 6px rgba(255,255,255,0.4),
+                    inset 0 -6px 8px rgba(0,0,0,0.3)
+                  `,
                   transition: 'all 0.1s',
-                  '&:active': { transform: 'scale(0.95)', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }
+                  '&:active': { 
+                    transform: 'scale(0.98)', 
+                    boxShadow: `
+                      0 2px 4px rgba(0,0,0,0.3),
+                      inset 0 2px 4px rgba(255,255,255,0.3),
+                      inset 0 -3px 4px rgba(0,0,0,0.3)
+                    `
+                  }
                 }}
               >
                 ROLL
@@ -226,6 +308,19 @@ export default function GameBoard({
       </Box>
 
 
+      {/* Player Pawns Layer - Step-by-step movement */}
+      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 100 }}>
+        {players.map((player) => (
+          <AnimatedPawn 
+            key={player.id} 
+            player={player} 
+            allPlayers={players} 
+            getSquareGridArea={getSquareGridArea}
+            animationSpeed={animationSpeed}
+          />
+        ))}
+      </Box>
+
       {/* Board Squares */}
       {(board || []).map((square) => (
         <Box
@@ -242,13 +337,6 @@ export default function GameBoard({
             square={square} 
             ownerColor={players.find(p => p.id === (square.property?.ownerId || square.transportation?.ownerId))?.color}
           />
-          <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', p: 0.5 }}>
-            {players
-              .filter((player) => player.position === square.position)
-              .map((player, playerIndex) => (
-                <PlayerPawn key={player.id} player={player} offset={playerIndex} />
-              ))}
-          </Box>
         </Box>
       ))}
     </Box>

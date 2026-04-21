@@ -77,7 +77,7 @@ export default function PropertyActionPanel({
           {ownedByCurrentPlayer ? (
             <p>You own this route.</p>
           ) : isOwned ? (
-            <p>You owe ¤{rentAmount} for this route.</p>
+            <p>You owe {rentAmount} for this route.</p>
           ) : (
             <p>Unowned route. You can buy it now.</p>
           )}
@@ -87,7 +87,7 @@ export default function PropertyActionPanel({
           onClick={onBuy}
           className="mt-4 w-full rounded-xl bg-cyan-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200"
         >
-          {isOwned ? `Pay route rent ¤${rentAmount}` : `Buy for ¤${transportation.price}`}
+          {isOwned ? `Pay route rent ${rentAmount}` : `Buy for ${transportation.price}`}
         </button>
       </div>
     );
@@ -125,11 +125,11 @@ export default function PropertyActionPanel({
       <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
         <div className="rounded-xl bg-white/5 p-3">
           <p className="text-slate-400">Price</p>
-          <p className="mt-1 font-semibold">¤{property.price}</p>
+          <p className="mt-1 font-semibold">{property.price}</p>
         </div>
         <div className="rounded-xl bg-white/5 p-3">
           <p className="text-slate-400">Rent</p>
-          <p className="mt-1 font-semibold">¤{rentAmount}</p>
+          <p className="mt-1 font-semibold">{rentAmount}</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export default function PropertyActionPanel({
         {ownedByCurrentPlayer ? (
           <p>You own this property.</p>
         ) : isOwned ? (
-          <p>You owe ¤{rentAmount} to the owner.</p>
+          <p>You owe {rentAmount} to the owner.</p>
         ) : (
           <p>{enableAuctions ? 'Unowned property. An auction will start if you cannot buy it.' : 'Unowned property. You can buy it now.'}</p>
         )}
@@ -154,7 +154,7 @@ export default function PropertyActionPanel({
         disabled={!canBuy && !(enableAuctions && !isOwned && onStartAuction)}
         className="mt-4 w-full rounded-xl bg-cyan-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isOwned ? `Pay rent ¤${rentAmount}` : `Buy for ¤${property.price}`}
+        {isOwned ? `Pay rent ${rentAmount}` : `Buy for ${property.price}`}
       </button>
 
       {enableAuctions && !isOwned && !canBuy && onStartAuction ? (
@@ -171,7 +171,7 @@ export default function PropertyActionPanel({
           onClick={() => onPlaceAuctionBid(Math.max(1, Math.floor(property.price / 2)))}
           className="mt-3 w-full rounded-xl border border-fuchsia-300/30 px-4 py-3 font-semibold text-fuchsia-100 transition hover:bg-fuchsia-300/10"
         >
-          Bid ¤{Math.max(1, Math.floor(property.price / 2))}
+          Bid {Math.max(1, Math.floor(property.price / 2))}
         </button>
       ) : null}
 
@@ -195,7 +195,7 @@ export default function PropertyActionPanel({
           onClick={() => onBuildHouse(property.position)}
           className="mt-3 w-full rounded-xl border border-white/15 px-4 py-3 font-semibold transition hover:bg-white/8"
         >
-          Build house (¤{property.housePrice})
+          Build house ({property.housePrice})
         </button>
       ) : null}
 
@@ -204,7 +204,7 @@ export default function PropertyActionPanel({
           onClick={() => onSellHouse(property.position)}
           className="mt-3 w-full rounded-xl border border-amber-300/30 px-4 py-3 font-semibold text-amber-100 transition hover:bg-amber-300/10"
         >
-          Sell house (¤{Math.floor(property.housePrice / 2)})
+          Sell house ({Math.floor(property.housePrice / 2)})
         </button>
       ) : null}
 
@@ -213,7 +213,7 @@ export default function PropertyActionPanel({
           onClick={() => onMortgageProperty(property.position)}
           className="mt-3 w-full rounded-xl border border-slate-400/30 px-4 py-3 font-semibold text-slate-100 transition hover:bg-white/8"
         >
-          Mortgage (¤{property.mortgageValue})
+          Mortgage ({property.mortgageValue})
         </button>
       ) : null}
 
@@ -222,7 +222,7 @@ export default function PropertyActionPanel({
           onClick={() => onUnmortgageProperty(property.position)}
           className="mt-3 w-full rounded-xl border border-emerald-300/30 px-4 py-3 font-semibold text-emerald-100 transition hover:bg-emerald-300/10"
         >
-          Unmortgage (¤{Math.ceil(property.mortgageValue * 1.1)})
+          Unmortgage ({Math.ceil(property.mortgageValue * 1.1)})
         </button>
       ) : null}
     </div>

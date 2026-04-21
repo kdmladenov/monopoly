@@ -124,7 +124,7 @@ export default function AuctionDialog({
               mb: 1.5,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 800, color: "black", letterSpacing: 0.5, textTransform: "uppercase", fontSize: '0.8rem' }}>
+            <Typography variant="h5" sx={{ fontWeight: 900, color: "black", letterSpacing: 0.5, textTransform: "uppercase", fontSize: '1.2rem' }}>
               {property.name}
             </Typography>
           </Box>
@@ -134,38 +134,38 @@ export default function AuctionDialog({
               <Stack spacing={0.4}>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>Land</Typography>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{square.property.rentStructure.base}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{square.property.rentStructure.base}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontSize: "0.75rem", color: "black" }}>One house</Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house1}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house1}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Two houses</Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house2}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house2}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Three houses</Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house3}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house3}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Four houses</Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house4}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.house4}</Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Five houses</Typography>
-                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.hotel}¤</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.property.rentStructure.hotel}</Typography>
                 </Box>
               </Stack>
             ) : (
                 <Stack spacing={0.5}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Rent (1 Terminal)</Typography>
-                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.transportation?.rent.one}¤</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.transportation?.rent.one}</Typography>
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography sx={{ fontSize: "0.75rem", color: "black" }}>Rent (2 Terminals)</Typography>
-                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.transportation?.rent.two}¤</Typography>
+                        <Typography sx={{ fontSize: "0.75rem", color: "black" }}>{square.transportation?.rent.two}</Typography>
                     </Box>
                 </Stack>
             )}
@@ -177,11 +177,11 @@ export default function AuctionDialog({
           <Stack spacing={0.4} sx={{ mt: 1, color: "black" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>House price</Typography>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{square.property?.housePrice || 0}¤</Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{square.property?.housePrice || 0}</Typography>
             </Box>
             <Box sx={{ display: "flex", justifyContent: "space-between" }}>
               <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>Mortgage value</Typography>
-              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{property.mortgageValue}¤</Typography>
+              <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "black" }}>{property.mortgageValue}</Typography>
             </Box>
           </Stack>
         </Box>
@@ -217,7 +217,7 @@ export default function AuctionDialog({
                 <PersonIcon sx={{ fontSize: 40, color: "white" }} />
               </Paper>
               <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 700, fontSize: '0.8rem' }}>
-                {activeAuction.highestBid.toLocaleString()}¤
+                {activeAuction.highestBid.toLocaleString()}
               </Typography>
             </Box>
 
@@ -229,7 +229,7 @@ export default function AuctionDialog({
             }}>
               {activeAuction.bidHistory.slice().reverse().slice(0, 5).map((bid, i) => (
                 <Typography key={`bid-${bid.playerId}-${bid.amount}-${i}`} sx={{ fontSize: "0.7rem", textAlign: 'left', mb: 0.2 }}>
-                  {bid.playerName}: {bid.amount.toLocaleString()}¤
+                  {bid.playerName}: {bid.amount.toLocaleString()}
                 </Typography>
               ))}
               {activeAuction.bidHistory.length === 0 && (
@@ -245,7 +245,7 @@ export default function AuctionDialog({
                 {currentBidder?.name}
               </Typography>
               <Typography sx={{ color: "#fbbf24", fontWeight: 800, fontSize: '0.9rem' }}>
-                {bidAmount.toLocaleString()}¤
+                {bidAmount.toLocaleString()}
               </Typography>
             </Box>
 

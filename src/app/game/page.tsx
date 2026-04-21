@@ -170,6 +170,7 @@ export default function GamePage() {
             board={game.board}
             players={game.players}
             lastDiceRoll={game.lastDiceRoll}
+            animationSpeed={game.settings.animationSpeed}
             onSquareClick={handleSquareClick}
             onRollDice={handleRoll}
             onEndTurn={handleEndTurn}

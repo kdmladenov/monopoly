@@ -160,8 +160,8 @@ export default function LandActionDialog({
             }}
           >
             <Typography
-              variant="h6" // Smaller name
-              sx={{ fontWeight: 800, letterSpacing: 1, color: "white", fontSize: '0.9rem' }}
+              variant="h5"
+              sx={{ fontWeight: 900, letterSpacing: 1, color: "white", fontSize: '1.2rem' }}
             >
               {name.toUpperCase()}
             </Typography>
@@ -176,7 +176,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Land</Typography>
                     <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
-                      {property.rentStructure.base}¤
+                      {property.rentStructure.base}
                     </Typography>
                   </Box>
                   <Box
@@ -184,7 +184,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>One house</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {property.rentStructure.house1}¤
+                      {property.rentStructure.house1}
                     </Typography>
                   </Box>
                   <Box
@@ -192,7 +192,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Two houses</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {property.rentStructure.house2}¤
+                      {property.rentStructure.house2}
                     </Typography>
                   </Box>
                   <Box
@@ -200,7 +200,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Three houses</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {property.rentStructure.house3}¤
+                      {property.rentStructure.house3}
                     </Typography>
                   </Box>
                   <Box
@@ -208,7 +208,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Four houses</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {property.rentStructure.house4}¤
+                      {property.rentStructure.house4}
                     </Typography>
                   </Box>
                   <Box
@@ -216,7 +216,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Five houses</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {property.rentStructure.hotel}¤
+                      {property.rentStructure.hotel}
                     </Typography>
                   </Box>
                 </>
@@ -227,7 +227,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Rent (1 Terminal)</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {transportation.rent.one}¤
+                      {transportation.rent.one}
                     </Typography>
                   </Box>
                   <Box
@@ -235,7 +235,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Rent (2 Terminals)</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {transportation.rent.two}¤
+                      {transportation.rent.two}
                     </Typography>
                   </Box>
                   <Box
@@ -243,7 +243,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Rent (3 Terminals)</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {transportation.rent.three}¤
+                      {transportation.rent.three}
                     </Typography>
                   </Box>
                   <Box
@@ -251,7 +251,7 @@ export default function LandActionDialog({
                   >
                     <Typography sx={{ fontSize: '0.75rem' }}>Rent (4 Terminals)</Typography>
                     <Typography sx={{ fontSize: '0.75rem' }}>
-                      {transportation.rent.four}¤
+                      {transportation.rent.four}
                     </Typography>
                   </Box>
                 </>
@@ -272,12 +272,12 @@ export default function LandActionDialog({
               {property && (
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                   <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>House price</Typography>
-                  <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{housePrice}¤</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{housePrice}</Typography>
                 </Box>
               )}
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>Mortgage value</Typography>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{mortgageValue}¤</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: '0.75rem' }}>{mortgageValue}</Typography>
               </Box>
             </Stack>
           </Box>
@@ -345,7 +345,7 @@ export default function LandActionDialog({
                       variant="contained"
                       sx={{ bgcolor: "black", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                     >
-                      BUILD HOUSE (+{property.housePrice}¤)
+                      BUILD HOUSE (+{property.housePrice})
                     </Button>
                   )}
                   
@@ -356,7 +356,7 @@ export default function LandActionDialog({
                       variant="contained"
                       sx={{ bgcolor: "black", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                     >
-                      SELL HOUSE (+{Math.floor(property.housePrice / 2)}¤)
+                      SELL HOUSE (+{Math.floor(property.housePrice / 2)})
                     </Button>
                   )}
 
@@ -367,7 +367,7 @@ export default function LandActionDialog({
                       variant="contained"
                       sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                     >
-                      MORTGAGE (+{property.mortgageValue}¤)
+                      MORTGAGE (+{property.mortgageValue})
                     </Button>
                   )}
                 </>
@@ -378,7 +378,7 @@ export default function LandActionDialog({
                   variant="contained"
                   sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                 >
-                  UNMORTGAGE (-{Math.ceil(property.mortgageValue * 1.1)}¤)
+                  UNMORTGAGE (-{Math.ceil(property.mortgageValue * 1.1)})
                 </Button>
               )}
             </>
@@ -393,7 +393,7 @@ export default function LandActionDialog({
                   variant="contained"
                   sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                 >
-                  MORTGAGE (+{transportation.mortgageValue}¤)
+                  MORTGAGE (+{transportation.mortgageValue})
                 </Button>
               ) : (
                 <Button
@@ -402,7 +402,7 @@ export default function LandActionDialog({
                   variant="contained"
                   sx={{ bgcolor: "black", color: "white", fontWeight: 700, fontSize: '0.8rem', py: 0.8 }}
                 >
-                  UNMORTGAGE (-{Math.ceil(transportation.mortgageValue * 1.1)}¤)
+                  UNMORTGAGE (-{Math.ceil(transportation.mortgageValue * 1.1)})
                 </Button>
               )}
             </>

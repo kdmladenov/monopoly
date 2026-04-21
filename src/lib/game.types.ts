@@ -53,6 +53,7 @@ export interface GameSettings {
   enableSound: boolean;
   gameSpeed: 1 | 2 | 3;
   enableAuctions: boolean;
+  animationSpeed: number;
 }
 
 export interface Player {

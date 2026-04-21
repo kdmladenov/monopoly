@@ -16,6 +16,7 @@ export const defaultGameSettings: GameSettings = {
   enableSound: true,
   gameSpeed: 2,
   enableAuctions: true,
+  animationSpeed: 1.0,
 };
 
 export const initialGameState: GameState = {

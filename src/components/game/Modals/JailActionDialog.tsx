@@ -100,7 +100,7 @@ export default function JailActionDialog({
               }}
               startIcon={<GavelIcon />}
             >
-              PAY FINE ({fineAmount}¤)
+              PAY FINE ({fineAmount})
             </Button>
 
             <Button

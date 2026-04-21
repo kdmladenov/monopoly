@@ -106,7 +106,7 @@ export default function TradeDialog({
           {name.toUpperCase()}
         </Typography>
         <Typography variant="caption" sx={{ fontWeight: 700 }}>
-          {price}¤
+          {price}
         </Typography>
         {(s.property?.isMortgaged || s.transportation?.isMortgaged) && (
           <Box sx={{ position: "absolute", top: "40%", left: "10%", bgcolor: "red", color: "white", p: 0.2, fontWeight: 900, fontSize: "0.5rem", border: "1px solid white", transform: "rotate(-15deg)" }}>
@@ -164,7 +164,7 @@ export default function TradeDialog({
                 {balance > 0 && (
                   <Paper sx={{ p: 1, display: "flex", alignItems: "center", gap: 1, bgcolor: "white", borderRadius: 2 }}>
                     <Box sx={{ bgcolor: "#22c55e", color: "white", p: 0.5, borderRadius: 1, fontWeight: 900 }}>$</Box>
-                    <Typography sx={{ color: "black", fontWeight: 900, fontSize: "1.2rem" }}>{balance.toLocaleString()}¤</Typography>
+                    <Typography sx={{ color: "black", fontWeight: 900, fontSize: "1.2rem" }}>{balance.toLocaleString()}</Typography>
                   </Paper>
                 )}
               </Box>
@@ -183,7 +183,7 @@ export default function TradeDialog({
                 {balance < 0 && (
                   <Paper sx={{ p: 1, display: "flex", alignItems: "center", gap: 1, bgcolor: "white", borderRadius: 2 }}>
                     <Box sx={{ bgcolor: "#22c55e", color: "white", p: 0.5, borderRadius: 1, fontWeight: 900 }}>$</Box>
-                    <Typography sx={{ color: "black", fontWeight: 900, fontSize: "1.2rem" }}>{Math.abs(balance).toLocaleString()}¤</Typography>
+                    <Typography sx={{ color: "black", fontWeight: 900, fontSize: "1.2rem" }}>{Math.abs(balance).toLocaleString()}</Typography>
                   </Paper>
                 )}
               </Box>

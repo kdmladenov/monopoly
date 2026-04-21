@@ -83,7 +83,7 @@
     }
   ],
   "transportation": [
-    { "type": "airport", "name": "Cairo International", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
+    { "type": "airport", "name": "Cairo Intl.", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
     { "type": "airport", "name": "Mumbai Chhatrapati", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
     { "type": "airport", "name": "Mexico City Benito", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 },
     { "type": "airport", "name": "Tokyo Narita", "price": 2000, "rent": { "one": 250, "two": 500, "three": 1000, "four": 2000 }, "mortgageValue": 1000 }

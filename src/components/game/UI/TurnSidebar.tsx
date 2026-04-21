@@ -89,7 +89,7 @@ export default function TurnSidebar({
                     fontSize: '1.1rem' 
                   }}
                 >
-                  {player.money.toLocaleString()}¤
+                  {player.money.toLocaleString()}
                 </Typography>
               </Paper>
             </Box>

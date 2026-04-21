@@ -15,7 +15,8 @@ import {
   setBoard,
   setCurrentPlayerIndex,
   setPlayers,
-  startGame
+  startGame,
+  updateSettings
 } from "@/lib/features/game/gameSlice";
 import { BoardGenerator } from "@/lib/services/BoardGenerator";
 import ContinentSelector from "@/components/setup/ContinentSelector";
@@ -26,8 +27,10 @@ import {
   Paper,
   Typography,
   Button,
-  Stack
+  Stack,
+  Slider
 } from "@mui/material";
+import SpeedIcon from "@mui/icons-material/Speed";
 
 export default function Home() {
   const router = useRouter();
@@ -172,6 +175,23 @@ export default function Home() {
                 onAddAIPlayer={addAIPlayer}
                 onRemovePlayer={removePlayer}
                 onUpdatePlayer={updatePlayer}
+              />
+            </Box>
+            
+            <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2 }}>
+              <Stack direction="row" spacing={2} sx={{ mb: 1, alignItems: 'center' }}>
+                <SpeedIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>Animation Speed</Typography>
+              </Stack>
+              <Slider
+                size="small"
+                value={useSelector((state: RootState) => state.game.settings.animationSpeed)}
+                min={0.1}
+                max={2.0}
+                step={0.1}
+                onChange={(_, value) => dispatch(updateSettings({ animationSpeed: value as number }))}
+                valueLabelDisplay="auto"
+                sx={{ ml: 1, width: '95%' }}
               />
             </Box>
           </Stack>

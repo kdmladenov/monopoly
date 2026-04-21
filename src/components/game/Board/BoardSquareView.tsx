@@ -36,23 +36,23 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
       case 'left':
         return { 
           flexDirection: 'row-reverse',
-          barStyle: { width: '25%', height: '100%', borderLeft: '1px solid black' }
+          barStyle: { width: 20, height: '100%', borderLeft: '1px solid black', flexShrink: 0 }
         };
       case 'top':
         return { 
           flexDirection: 'column-reverse',
-          barStyle: { height: '25%', width: '100%', borderTop: '1px solid black' }
+          barStyle: { height: 20, width: '100%', borderTop: '1px solid black', flexShrink: 0 }
         };
       case 'right':
         return { 
           flexDirection: 'row',
-          barStyle: { width: '25%', height: '100%', borderRight: '1px solid black' }
+          barStyle: { width: 20, height: '100%', borderRight: '1px solid black', flexShrink: 0 }
         };
       case 'bottom':
       default:
         return { 
           flexDirection: 'column',
-          barStyle: { height: '25%', width: '100%', borderBottom: '1px solid black' }
+          barStyle: { height: 20, width: '100%', borderBottom: '1px solid black', flexShrink: 0 }
         };
     }
   };
@@ -113,12 +113,18 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
         width: '100%',
         display: 'flex',
         flexDirection,
-        bgcolor: ownerColor ? `${ownerColor}25` : '#c6e6d5', // Match board center
+        bgcolor: ownerColor ? `${ownerColor}40` : '#c6e6d5', 
         border: '0.5px solid black',
         borderRadius: 0,
         overflow: 'hidden',
         position: 'relative',
         boxSizing: 'border-box',
+        // Directional shadows to make center look lower
+        boxShadow: side === 'bottom' ? 'inset 0 4px 6px -4px rgba(0,0,0,0.3)' : 
+                   side === 'top' ? 'inset 0 -4px 6px -4px rgba(0,0,0,0.3)' :
+                   side === 'left' ? 'inset -4px 0 6px -4px rgba(0,0,0,0.3)' :
+                   'inset 4px 0 6px -4px rgba(0,0,0,0.3)',
+        zIndex: 2,
       }}
     >
       {isMortgaged && (
@@ -131,8 +137,8 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
       )}
       
       <Box sx={{ 
-        px: 0.1,
-        py: 0.2, 
+        px: 0.2,
+        py: 0.5, 
         flexGrow: 1, 
         display: 'flex', 
         flexDirection: 'column', 
@@ -144,13 +150,18 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
         <Typography 
           sx={{ 
             color: 'black', 
-            fontWeight: 800, 
-            fontSize: isCorner ? '0.6rem' : (side === 'left' || side === 'right' ? '0.42rem' : '0.5rem'), 
-            lineHeight: 1.1,
+            fontWeight: 900, 
+            fontSize: '0.55rem', // Totally unified size for ALL squares
+            lineHeight: 1,
             width: '100%',
-            overflow: 'hidden',
             fontFamily: '"Roboto Condensed", sans-serif',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            wordBreak: 'break-word'
           }}
         >
           {name}
@@ -164,13 +175,13 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
           <Typography 
             sx={{ 
               color: 'black', 
-              fontWeight: 700, 
-              fontSize: side === 'left' || side === 'right' ? '0.4rem' : '0.5rem',
+              fontWeight: 900, 
+              fontSize: '0.55rem', // Unified size for all non-corner squares
               lineHeight: 1,
               fontFamily: '"Roboto Condensed", sans-serif'
             }}
           >
-            {price.toLocaleString()}¤
+            {price.toLocaleString()}
           </Typography>
         )}
       </Box>
