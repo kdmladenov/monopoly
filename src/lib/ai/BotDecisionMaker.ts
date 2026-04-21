@@ -82,6 +82,6 @@ export class BotDecisionMaker {
   }
 
   private getPersonality(player: Player): PersonalityConfig {
-    return PERSONALITY_CONFIGS[player.aiStyle || 'balanced'];
+    return PERSONALITY_CONFIGS[player.aiStyle || AIStyle.BALANCED];
   }
 }
