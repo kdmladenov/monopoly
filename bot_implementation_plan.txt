@@ -1,0 +1,1830 @@
+# Comprehensive Monopoly Bot Implementation Plan
+
+## 1. Architecture Overview
+
+```typescript
+// Core bot architecture
+interface BotPlayer {
+  id: string;
+  name: string;
+  personality: BotPersonality;
+  strategy: BotStrategy;
+  decisionMaker: DecisionMaker;
+}
+
+enum BotPersonality {
+  CAUTIOUS = 'CAUTIOUS',
+  BALANCED = 'BALANCED',
+  AGGRESSIVE = 'AGGRESSIVE'
+}
+```
+
+## 2. Core Decision-Making System
+
+### 2.1 Decision Maker Interface
+
+```typescript
+interface DecisionMaker {
+  // Property decisions
+  shouldBuyProperty(property: Property, gameState: GameState): boolean;
+  shouldBidInAuction(property: Property, currentBid: number, gameState: GameState): number | null;
+  
+  // Trading decisions
+  evaluateTrade(trade: TradeOffer, gameState: GameState): TradeDecision;
+  proposeTrade(gameState: GameState): TradeOffer | null;
+  
+  // Mortgage decisions
+  selectPropertiesToMortgage(amountNeeded: number, gameState: GameState): Property[];
+  shouldUnmortgageProperty(property: Property, gameState: GameState): boolean;
+  
+  // Building decisions
+  selectBuildingActions(gameState: GameState): BuildingAction[];
+  selectPropertiesToSellBuildings(amountNeeded: number, gameState: GameState): BuildingAction[];
+  
+  // Jail decisions
+  shouldPayJailFine(gameState: GameState): boolean;
+  shouldUseGetOutOfJailCard(gameState: GameState): boolean;
+  
+  // Bankruptcy decisions
+  handleBankruptcy(debt: number, creditor: Player, gameState: GameState): BankruptcyAction;
+}
+```
+
+### 2.2 Game State Evaluation
+
+```typescript
+interface GameStateEvaluator {
+  evaluatePlayerPosition(player: Player, gameState: GameState): PlayerEvaluation;
+  evaluatePropertyValue(property: Property, gameState: GameState): number;
+  evaluateMonopolyValue(colorGroup: ColorGroup, gameState: GameState): number;
+  calculateWinProbability(player: Player, gameState: GameState): number;
+}
+
+interface PlayerEvaluation {
+  liquidAssets: number;
+  totalAssets: number;
+  monopoliesOwned: number;
+  monopoliesNearCompletion: number;
+  averagePropertyValue: number;
+  buildingCount: number;
+  strategicPosition: number; // 0-100 score
+  threatLevel: number; // relative to other players
+}
+```
+
+## 3. Personality-Based Parameters
+
+```typescript
+interface PersonalityConfig {
+  // Risk tolerance (0-1, higher = more risk)
+  riskTolerance: number;
+  
+  // Cash reserve targets
+  minCashReserve: number;
+  targetCashReserve: number;
+  
+  // Property buying thresholds
+  propertyBuyThreshold: number; // % of value to pay
+  auctionMaxBidRatio: number; // max % of property value to bid
+  
+  // Building strategy
+  buildingAggression: number; // 0-1
+  monopolyBuildPriority: number; // 0-1
+  
+  // Trading willingness
+  tradeWillingness: number; // 0-1
+  tradeValueMultiplier: number; // how much value to demand
+  
+  // Mortgage strategy
+  mortgageReluctance: number; // 0-1
+  unmortgagePriority: number; // 0-1
+  
+  // Jail strategy
+  jailEarlyGameValue: number; // value of staying in jail early
+  jailLateGameValue: number; // value of staying in jail late
+}
+
+const PERSONALITY_CONFIGS: Record<BotPersonality, PersonalityConfig> = {
+  [BotPersonality.CAUTIOUS]: {
+    riskTolerance: 0.3,
+    minCashReserve: 500,
+    targetCashReserve: 1000,
+    propertyBuyThreshold: 0.7,
+    auctionMaxBidRatio: 0.6,
+    buildingAggression: 0.3,
+    monopolyBuildPriority: 0.9,
+    tradeWillingness: 0.4,
+    tradeValueMultiplier: 1.3,
+    mortgageReluctance: 0.8,
+    unmortgagePriority: 0.9,
+    jailEarlyGameValue: -0.3,
+    jailLateGameValue: 0.7,
+  },
+  [BotPersonality.BALANCED]: {
+    riskTolerance: 0.5,
+    minCashReserve: 300,
+    targetCashReserve: 600,
+    propertyBuyThreshold: 0.85,
+    auctionMaxBidRatio: 0.8,
+    buildingAggression: 0.5,
+    monopolyBuildPriority: 0.7,
+    tradeWillingness: 0.6,
+    tradeValueMultiplier: 1.15,
+    mortgageReluctance: 0.5,
+    unmortgagePriority: 0.6,
+    jailEarlyGameValue: -0.5,
+    jailLateGameValue: 0.5,
+  },
+  [BotPersonality.AGGRESSIVE]: {
+    riskTolerance: 0.8,
+    minCashReserve: 100,
+    targetCashReserve: 300,
+    propertyBuyThreshold: 1.0,
+    auctionMaxBidRatio: 1.1,
+    buildingAggression: 0.9,
+    monopolyBuildPriority: 0.5,
+    tradeWillingness: 0.8,
+    tradeValueMultiplier: 1.05,
+    mortgageReluctance: 0.2,
+    unmortgagePriority: 0.3,
+    jailEarlyGameValue: -0.7,
+    jailLateGameValue: 0.3,
+  },
+};
+```
+
+## 4. Property Evaluation System
+
+```typescript
+class PropertyEvaluator {
+  /**
+   * Calculate the strategic value of a property
+   */
+  calculatePropertyValue(
+    property: Property,
+    player: Player,
+    gameState: GameState,
+    personality: PersonalityConfig
+  ): number {
+    let value = 0;
+    
+    // Base value: purchase price
+    value += property.price;
+    
+    // Monopoly completion value
+    value += this.getMonopolyCompletionValue(property, player, gameState);
+    
+    // Monopoly blocking value (preventing others)
+    value += this.getMonopolyBlockingValue(property, player, gameState);
+    
+    // Landing probability value
+    value += this.getLandingProbabilityValue(property, gameState);
+    
+    // ROI value (expected rent income)
+    value += this.getROIValue(property, gameState);
+    
+    // Strategic position value (railroads, utilities)
+    value += this.getStrategicValue(property, gameState);
+    
+    // Apply personality modifiers
+    value *= this.getPersonalityModifier(property, personality);
+    
+    return value;
+  }
+  
+  private getMonopolyCompletionValue(
+    property: Property,
+    player: Player,
+    gameState: GameState
+  ): number {
+    const colorGroup = property.colorGroup;
+    const ownedInGroup = this.countOwnedInColorGroup(player, colorGroup, gameState);
+    const totalInGroup = this.getTotalInColorGroup(colorGroup);
+    
+    if (ownedInGroup === totalInGroup - 1) {
+      // One away from monopoly - very high value
+      return property.price * 2.5;
+    } else if (ownedInGroup === totalInGroup - 2 && totalInGroup === 3) {
+      // Two away from monopoly (3 property group)
+      return property.price * 1.2;
+    } else if (ownedInGroup > 0) {
+      // Some properties in group
+      return property.price * 0.5;
+    }
+    
+    return 0;
+  }
+  
+  private getMonopolyBlockingValue(
+    property: Property,
+    player: Player,
+    gameState: GameState
+  ): number {
+    let blockingValue = 0;
+    
+    // Check if any opponent is close to monopoly
+    for (const opponent of gameState.players) {
+      if (opponent.id === player.id) continue;
+      
+      const ownedInGroup = this.countOwnedInColorGroup(
+        opponent,
+        property.colorGroup,
+        gameState
+      );
+      const totalInGroup = this.getTotalInColorGroup(property.colorGroup);
+      
+      if (ownedInGroup === totalInGroup - 1) {
+        // Blocking a monopoly is very valuable
+        blockingValue += property.price * 1.5;
+      }
+    }
+    
+    return blockingValue;
+  }
+  
+  private getLandingProbabilityValue(
+    property: Property,
+    gameState: GameState
+  ): number {
+    // Properties with higher landing probability are more valuable
+    // Account for: position on board, Chance/Community Chest effects, Go To Jail
+    const landingProbability = this.calculateLandingProbability(property, gameState);
+    return property.price * landingProbability * 0.5;
+  }
+  
+  private getROIValue(property: Property, gameState: GameState): number {
+    if (property.type !== 'STREET') return 0;
+    
+    // Calculate expected return based on base rent
+    const expectedTurnsToRecoup = 20; // Adjustable parameter
+    const baseRent = property.rent[0];
+    const expectedReturn = baseRent * (gameState.players.length - 1) * expectedTurnsToRecoup;
+    
+    return expectedReturn * 0.3; // Weight factor
+  }
+  
+  private getStrategicValue(property: Property, gameState: GameState): number {
+    // Railroads and utilities have special strategic value
+    if (property.type === 'RAILROAD') {
+      const ownedRailroads = this.countOwnedRailroads(gameState.currentPlayer, gameState);
+      return property.price * (0.2 * ownedRailroads); // More railroads = exponential value
+    }
+    
+    if (property.type === 'UTILITY') {
+      const ownedUtilities = this.countOwnedUtilities(gameState.currentPlayer, gameState);
+      return property.price * (0.3 * ownedUtilities);
+    }
+    
+    return 0;
+  }
+  
+  private getPersonalityModifier(
+    property: Property,
+    personality: PersonalityConfig
+  ): number {
+    // Aggressive bots value cheaper properties less (want big wins)
+    // Cautious bots value expensive properties less (risk averse)
+    if (property.price < 200) {
+      return 1 + (personality.riskTolerance * 0.2);
+    } else if (property.price > 300) {
+      return 1 + ((1 - personality.riskTolerance) * 0.2);
+    }
+    
+    return 1;
+  }
+}
+```
+
+## 5. Property Purchase Decision
+
+```typescript
+class PropertyPurchaseDecision {
+  constructor(
+    private evaluator: PropertyEvaluator,
+    private personality: PersonalityConfig
+  ) {}
+  
+  shouldBuyProperty(
+    property: Property,
+    player: Player,
+    gameState: GameState
+  ): boolean {
+    // Check if player has enough cash
+    const cashAfterPurchase = player.cash - property.price;
+    
+    // Must maintain minimum reserve
+    if (cashAfterPurchase < this.personality.minCashReserve) {
+      return false;
+    }
+    
+    // Calculate property value
+    const propertyValue = this.evaluator.calculatePropertyValue(
+      property,
+      player,
+      gameState,
+      this.personality
+    );
+    
+    // Check if value exceeds threshold
+    const valueRatio = propertyValue / property.price;
+    
+    if (valueRatio < this.personality.propertyBuyThreshold) {
+      return false;
+    }
+    
+    // Game phase considerations
+    const gamePhase = this.determineGamePhase(gameState);
+    
+    if (gamePhase === 'EARLY') {
+      // Early game: buy almost everything if we can afford it
+      return true;
+    } else if (gamePhase === 'MID') {
+      // Mid game: be more selective, focus on monopolies
+      return valueRatio >= 1.0;
+    } else {
+      // Late game: very selective, only strategic purchases
+      return valueRatio >= 1.3;
+    }
+  }
+  
+  private determineGamePhase(gameState: GameState): 'EARLY' | 'MID' | 'LATE' {
+    const totalProperties = gameState.board.properties.length;
+    const ownedProperties = gameState.players.reduce(
+      (sum, p) => sum + p.properties.length,
+      0
+    );
+    const ownershipRatio = ownedProperties / totalProperties;
+    
+    const monopoliesExist = gameState.players.some(p => 
+      this.hasMonopoly(p, gameState)
+    );
+    
+    if (ownershipRatio < 0.5) return 'EARLY';
+    if (ownershipRatio < 0.85 || !monopoliesExist) return 'MID';
+    return 'LATE';
+  }
+}
+```
+
+## 6. Auction Bidding Strategy
+
+```typescript
+class AuctionBidStrategy {
+  constructor(
+    private evaluator: PropertyEvaluator,
+    private personality: PersonalityConfig
+  ) {}
+  
+  calculateBid(
+    property: Property,
+    currentBid: number,
+    player: Player,
+    gameState: GameState,
+    auctionState: AuctionState
+  ): number | null {
+    // Calculate max we're willing to pay
+    const propertyValue = this.evaluator.calculatePropertyValue(
+      property,
+      player,
+      gameState,
+      this.personality
+    );
+    
+    const maxBid = Math.floor(propertyValue * this.personality.auctionMaxBidRatio);
+    
+    // Don't bid if we can't afford it
+    const cashAvailableForBid = player.cash - this.personality.minCashReserve;
+    const affordableMaxBid = Math.min(maxBid, cashAvailableForBid);
+    
+    if (currentBid >= affordableMaxBid) {
+      return null; // Drop out
+    }
+    
+    // Bidding strategy based on personality
+    const bidIncrement = this.calculateBidIncrement(
+      property,
+      currentBid,
+      affordableMaxBid,
+      auctionState
+    );
+    
+    const newBid = currentBid + bidIncrement;
+    
+    return newBid <= affordableMaxBid ? newBid : null;
+  }
+  
+  private calculateBidIncrement(
+    property: Property,
+    currentBid: number,
+    maxBid: number,
+    auctionState: AuctionState
+  ): number {
+    const remainingRoom = maxBid - currentBid;
+    const minIncrement = 10;
+    
+    // Aggressive: big jumps to intimidate
+    if (this.personality.riskTolerance > 0.7) {
+      return Math.min(
+        Math.floor(remainingRoom * 0.3),
+        100
+      ) || minIncrement;
+    }
+    
+    // Cautious: small increments
+    if (this.personality.riskTolerance < 0.4) {
+      return minIncrement;
+    }
+    
+    // Balanced: moderate increments, faster near max
+    const progressToMax = currentBid / maxBid;
+    if (progressToMax > 0.8) {
+      return minIncrement;
+    }
+    return Math.floor(remainingRoom * 0.15) || minIncrement;
+  }
+}
+```
+
+## 7. Building Strategy
+
+```typescript
+class BuildingStrategy {
+  constructor(private personality: PersonalityConfig) {}
+  
+  selectBuildingActions(
+    player: Player,
+    gameState: GameState
+  ): BuildingAction[] {
+    const actions: BuildingAction[] = [];
+    
+    // Get all monopolies
+    const monopolies = this.getPlayerMonopolies(player, gameState);
+    
+    if (monopolies.length === 0) return actions;
+    
+    // Calculate available cash for building
+    const availableCash = player.cash - this.personality.targetCashReserve;
+    
+    if (availableCash <= 0) return actions;
+    
+    // Rank monopolies by priority
+    const rankedMonopolies = this.rankMonopoliesForBuilding(
+      monopolies,
+      player,
+      gameState
+    );
+    
+    let remainingCash = availableCash;
+    
+    for (const monopoly of rankedMonopolies) {
+      const buildingPlan = this.createBuildingPlan(
+        monopoly,
+        remainingCash,
+        player,
+        gameState
+      );
+      
+      actions.push(...buildingPlan.actions);
+      remainingCash -= buildingPlan.totalCost;
+      
+      if (remainingCash <= 0) break;
+    }
+    
+    return actions;
+  }
+  
+  private rankMonopoliesForBuilding(
+    monopolies: Monopoly[],
+    player: Player,
+    gameState: GameState
+  ): Monopoly[] {
+    return monopolies.sort((a, b) => {
+      const scoreA = this.calculateMonopolyBuildingPriority(a, player, gameState);
+      const scoreB = this.calculateMonopolyBuildingPriority(b, player, gameState);
+      return scoreB - scoreA;
+    });
+  }
+  
+  private calculateMonopolyBuildingPriority(
+    monopoly: Monopoly,
+    player: Player,
+    gameState: GameState
+  ): number {
+    let score = 0;
+    
+    // Factor 1: ROI - rent increase per dollar spent
+    const averageRentIncrease = this.calculateAverageRentIncrease(monopoly);
+    const averageHouseCost = this.calculateAverageHouseCost(monopoly);
+    const roi = averageRentIncrease / averageHouseCost;
+    score += roi * 100;
+    
+    // Factor 2: Landing probability
+    const landingProbability = this.calculateMonopolyLandingProbability(monopoly);
+    score += landingProbability * 50;
+    
+    // Factor 3: Color group value (expensive properties get bonus)
+    const avgPropertyValue = monopoly.properties.reduce((sum, p) => sum + p.price, 0) / monopoly.properties.length;
+    score += (avgPropertyValue / 400) * 30;
+    
+    // Factor 4: Current building level (prefer even building)
+    const buildingVariance = this.calculateBuildingVariance(monopoly);
+    score -= buildingVariance * 10;
+    
+    // Factor 5: Opponent threat level
+    const opponentThreat = this.calculateOpponentThreat(player, gameState);
+    if (opponentThreat > 0.7) {
+      // High threat: prefer faster ROI (cheaper properties)
+      score += (400 - avgPropertyValue) / 400 * 20;
+    }
+    
+    return score;
+  }
+  
+  private createBuildingPlan(
+    monopoly: Monopoly,
+    availableCash: number,
+    player: Player,
+    gameState: GameState
+  ): BuildingPlan {
+    const actions: BuildingAction[] = [];
+    let totalCost = 0;
+    
+    // Determine target building level based on personality
+    const targetLevel = this.calculateTargetBuildingLevel(
+      monopoly,
+      availableCash,
+      player,
+      gameState
+    );
+    
+    // Build evenly across properties (monopoly rule)
+    const properties = [...monopoly.properties].sort((a, b) => 
+      a.buildings - b.buildings
+    );
+    
+    let remainingCash = availableCash;
+    let changed = true;
+    
+    while (changed && remainingCash > 0) {
+      changed = false;
+      
+      for (const property of properties) {
+        if (property.buildings >= targetLevel) continue;
+        
+        const houseCost = property.houseCost;
+        
+        if (remainingCash >= houseCost) {
+          // Check if we can build (even building rule)
+          if (this.canBuildOnProperty(property, monopoly)) {
+            actions.push({
+              type: property.buildings === 4 ? 'BUILD_HOTEL' : 'BUILD_HOUSE',
+              property: property.id,
+            });
+            
+            property.buildings++; // Temporary increment for planning
+            remainingCash -= houseCost;
+            totalCost += houseCost;
+            changed = true;
+          }
+        }
+      }
+    }
+    
+    return { actions, totalCost };
+  }
+  
+  private calculateTargetBuildingLevel(
+    monopoly: Monopoly,
+    availableCash: number,
+    player: Player,
+    gameState: GameState
+  ): number {
+    const gamePhase = this.determineGamePhase(gameState);
+    const houseCost = monopoly.properties[0].houseCost;
+    const affordableBuildings = Math.floor(availableCash / (houseCost * monopoly.properties.length));
+    
+    // Aggressive: build to hotels if possible
+    if (this.personality.buildingAggression > 0.7) {
+      if (gamePhase === 'LATE') return Math.min(5, affordableBuildings);
+      return Math.min(4, affordableBuildings);
+    }
+    
+    // Cautious: build conservatively
+    if (this.personality.buildingAggression < 0.4) {
+      if (gamePhase === 'EARLY') return Math.min(1, affordableBuildings);
+      if (gamePhase === 'MID') return Math.min(3, affordableBuildings);
+      return Math.min(4, affordableBuildings);
+    }
+    
+    // Balanced: adaptive strategy
+    if (gamePhase === 'EARLY') return Math.min(2, affordableBuildings);
+    if (gamePhase === 'MID') return Math.min(3, affordableBuildings);
+    return Math.min(4, affordableBuildings);
+  }
+}
+```
+
+## 8. Trading System
+
+```typescript
+class TradingStrategy {
+  constructor(
+    private evaluator: PropertyEvaluator,
+    private personality: PersonalityConfig
+  ) {}
+  
+  /**
+   * Evaluate an incoming trade offer
+   */
+  evaluateTrade(
+    trade: TradeOffer,
+    player: Player,
+    gameState: GameState
+  ): TradeDecision {
+    // Calculate value of what we're giving up
+    const givingUpValue = this.calculateTradeItemsValue(
+      trade.offering,
+      player,
+      gameState,
+      'GIVING'
+    );
+    
+    // Calculate value of what we're receiving
+    const receivingValue = this.calculateTradeItemsValue(
+      trade.requesting,
+      player,
+      gameState,
+      'RECEIVING'
+    );
+    
+    // Calculate net value
+    const netValue = receivingValue - givingUpValue;
+    
+    // Personality-based acceptance threshold
+    const acceptanceThreshold = this.personality.tradeValueMultiplier;
+    const valueRatio = receivingValue / givingUpValue;
+    
+    // Additional strategic considerations
+    const strategicValue = this.calculateStrategicTradeValue(
+      trade,
+      player,
+      gameState
+    );
+    
+    const adjustedRatio = valueRatio * (1 + strategicValue);
+    
+    // Decision logic
+    if (adjustedRatio >= acceptanceThreshold) {
+      return {
+        accept: true,
+        confidence: Math.min(adjustedRatio / acceptanceThreshold, 1),
+        reasoning: 'Favorable trade value',
+      };
+    }
+    
+    // Check if trade completes a monopoly (might accept less value)
+    if (this.tradeCompletesMonopoly(trade.requesting, player, gameState)) {
+      if (adjustedRatio >= acceptanceThreshold * 0.8) {
+        return {
+          accept: true,
+          confidence: 0.7,
+          reasoning: 'Completes monopoly',
+        };
+      }
+    }
+    
+    return {
+      accept: false,
+      confidence: 1 - (adjustedRatio / acceptanceThreshold),
+      reasoning: 'Insufficient value',
+      counterOffer: this.generateCounterOffer(trade, player, gameState),
+    };
+  }
+  
+  /**
+   * Propose trades to other players
+   */
+  proposeTrade(player: Player, gameState: GameState): TradeOffer | null {
+    // Only propose trades based on willingness
+    if (Math.random() > this.personality.tradeWillingness) {
+      return null;
+    }
+    
+    // Strategy 1: Try to complete a monopoly
+    const monopolyTrade = this.findMonopolyCompletionTrade(player, gameState);
+    if (monopolyTrade) return monopolyTrade;
+    
+    // Strategy 2: Try to block opponent's monopoly while gaining value
+    const blockingTrade = this.findBlockingTrade(player, gameState);
+    if (blockingTrade) return blockingTrade;
+    
+    // Strategy 3: Consolidate properties (trade away odd properties)
+    const consolidationTrade = this.findConsolidationTrade(player, gameState);
+    if (consolidationTrade) return consolidationTrade;
+    
+    return null;
+  }
+  
+  private findMonopolyCompletionTrade(
+    player: Player,
+    gameState: GameState
+  ): TradeOffer | null {
+    // Find color groups where we're close to monopoly
+    const nearMonopolies = this.findNearMonopolies(player, gameState);
+    
+    for (const group of nearMonopolies) {
+      const neededProperties = this.getNeededProperties(player, group, gameState);
+      
+      for (const needed of neededProperties) {
+        const owner = this.getPropertyOwner(needed, gameState);
+        if (!owner) continue;
+        
+        // Calculate what we need to offer
+        const offer = this.constructMonopolyOffer(
+          player,
+          owner,
+          needed,
+          group,
+          gameState
+        );
+        
+        if (offer && this.isOfferAffordable(offer, player)) {
+          return offer;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  private constructMonopolyOffer(
+    player: Player,
+    opponent: Player,
+    targetProperty: Property,
+    targetGroup: ColorGroup,
+    gameState: GameState
+  ): TradeOffer | null {
+    // Value of target property to us
+    const targetValue = this.evaluator.calculatePropertyValue(
+      targetProperty,
+      player,
+      gameState,
+      this.personality
+    );
+    
+    // Add premium for monopoly completion
+    const monopolyPremium = targetValue * 0.5;
+    const totalValueNeeded = (targetValue + monopolyPremium) * this.personality.tradeValueMultiplier;
+    
+    // Find properties we can offer
+    const offerableProperties = this.findOfferableProperties(
+      player,
+      opponent,
+      gameState
+    );
+    
+    // Construct offer package
+    const offer = this.constructOfferPackage(
+      offerableProperties,
+      totalValueNeeded,
+      player,
+      opponent,
+      gameState
+    );
+    
+    if (!offer) return null;
+    
+    return {
+      from: player.id,
+      to: opponent.id,
+      offering: offer,
+      requesting: [{ type: 'PROPERTY', propertyId: targetProperty.id }],
+    };
+  }
+  
+  private calculateTradeItemsValue(
+    items: TradeItem[],
+    player: Player,
+    gameState: GameState,
+    direction: 'GIVING' | 'RECEIVING'
+  ): number {
+    let totalValue = 0;
+    
+    for (const item of items) {
+      if (item.type === 'PROPERTY') {
+        const property = gameState.board.properties.find(p => p.id === item.propertyId);
+        if (property) {
+          let propValue = this.evaluator.calculatePropertyValue(
+            property,
+            player,
+            gameState,
+            this.personality
+          );
+          
+          // If giving away, might value it less if it doesn't fit strategy
+          // If receiving, value it based on how it helps us
+          if (direction === 'GIVING') {
+            propValue *= 0.9; // Slight discount on what we're giving
+          } else {
+            propValue *= 1.1; // Slight premium on what we want
+          }
+          
+          totalValue += propValue;
+        }
+      } else if (item.type === 'MONEY') {
+        totalValue += item.amount;
+      } else if (item.type === 'GET_OUT_OF_JAIL_CARD') {
+        totalValue += 50; // Fixed value for jail card
+      }
+    }
+    
+    return totalValue;
+  }
+  
+  private calculateStrategicTradeValue(
+    trade: TradeOffer,
+    player: Player,
+    gameState: GameState
+  ): number {
+    let strategicValue = 0;
+    
+    // Check if receiving properties complete a monopoly
+    if (this.tradeCompletesMonopoly(trade.requesting, player, gameState)) {
+      strategicValue += 0.5; // 50% bonus
+    }
+    
+    // Check if we're preventing opponent from getting monopoly
+    const opponent = gameState.players.find(p => p.id === trade.from);
+    if (opponent && this.tradeCompletesMonopoly(trade.offering, opponent, gameState)) {
+      strategicValue -= 0.3; // Negative value - helping opponent
+    }
+    
+    // Check if trade gives us majority in color group
+    const groupsImproved = this.countColorGroupsImproved(
+      trade.requesting,
+      player,
+      gameState
+    );
+    strategicValue += groupsImproved * 0.1;
+    
+    return strategicValue;
+  }
+}
+```
+
+## 9. Mortgage/Unmortgage Strategy
+
+```typescript
+class MortgageStrategy {
+  constructor(private personality: PersonalityConfig) {}
+  
+  /**
+   * Select properties to mortgage when needing cash
+   */
+  selectPropertiesToMortgage(
+    amountNeeded: number,
+    player: Player,
+    gameState: GameState
+  ): Property[] {
+    const mortgageableProperties = player.properties.filter(p => 
+      !p.isMortgaged && p.buildings === 0
+    );
+    
+    // Rank properties by "mortgage priority" (least valuable to mortgage last)
+    const rankedProperties = this.rankPropertiesForMortgage(
+      mortgageableProperties,
+      player,
+      gameState
+    );
+    
+    const toMortgage: Property[] = [];
+    let amountRaised = 0;
+    
+    for (const property of rankedProperties) {
+      if (amountRaised >= amountNeeded) break;
+      
+      toMortgage.push(property);
+      amountRaised += property.mortgageValue;
+    }
+    
+    return toMortgage;
+  }
+  
+  /**
+   * Decide which mortgaged properties to unmortgage
+   */
+  shouldUnmortgageProperty(
+    property: Property,
+    player: Player,
+    gameState: GameState
+  ): boolean {
+    const unmortgageCost = property.mortgageValue * 1.1;
+    
+    // Check if we can afford it
+    const cashAfterUnmortgage = player.cash - unmortgageCost;
+    if (cashAfterUnmortgage < this.personality.minCashReserve) {
+      return false;
+    }
+    
+    // Calculate strategic value of unmortgaging
+    const strategicValue = this.calculateUnmortgageValue(property, player, gameState);
+    
+    // Personality-based decision
+    const threshold = 100 - (this.personality.unmortgagePriority * 50);
+    
+    return strategicValue > threshold;
+  }
+  
+  private rankPropertiesForMortgage(
+    properties: Property[],
+    player: Player,
+    gameState: GameState
+  ): Property[] {
+    return properties.sort((a, b) => {
+      const scoreA = this.calculateMortgageResistance(a, player, gameState);
+      const scoreB = this.calculateMortgageResistance(b, player, gameState);
+      return scoreA - scoreB; // Lower score = mortgage first
+    });
+  }
+  
+  private calculateMortgageResistance(
+    property: Property,
+    player: Player,
+    gameState: GameState
+  ): number {
+    let score = 0;
+    
+    // Factor 1: Part of monopoly (very resistant to mortgage)
+    if (this.isPartOfMonopoly(property, player, gameState)) {
+      score += 1000;
+    }
+    
+    // Factor 2: Close to monopoly
+    const propertiesInGroup = this.countPropertiesInGroup(property.colorGroup, player, gameState);
+    score += propertiesInGroup * 200;
+    
+    // Factor 3: Property value
+    score += property.price * 0.5;
+    
+    // Factor 4: Rent potential
+    if (property.type === 'STREET') {
+      score += property.rent[0] * 10;
+    }
+    
+    // Factor 5: Strategic properties (railroads, utilities)
+    if (property.type === 'RAILROAD') {
+      const railroadCount = this.countOwnedRailroads(player, gameState);
+      score += railroadCount * 100;
+    }
+    
+    if (property.type === 'UTILITY') {
+      score += 150;
+    }
+    
+    return score;
+  }
+  
+  private calculateUnmortgageValue(
+    property: Property,
+    player: Player,
+    gameState: GameState
+  ): number {
+    let value = 0;
+    
+    // High value if completes monopoly
+    if (this.unmortgageCompletesMonopoly(property, player, gameState)) {
+      value += 500;
+    }
+    
+    // Value based on rent potential
+    if (property.type === 'STREET') {
+      value += property.rent[0] * 5;
+    }
+    
+    // Value based on property price
+    value += property.price * 0.2;
+    
+    return value;
+  }
+}
+```
+
+## 10. Jail Strategy
+
+```typescript
+class JailStrategy {
+  constructor(private personality: PersonalityConfig) {}
+  
+  shouldPayJailFine(player: Player, gameState: GameState): boolean {
+    const turnsInJail = player.jailTurns || 0;
+    const gamePhase = this.determineGamePhase(gameState);
+    
+    // Always pay on third turn (forced to)
+    if (turnsInJail >= 2) return true;
+    
+    // Check if we can afford it
+    if (player.cash < 50 + this.personality.minCashReserve) {
+      return false;
+    }
+    
+    // Calculate value of being in/out of jail
+    const jailValue = this.calculateJailValue(player, gameState, gamePhase);
+    
+    // Positive jail value means we want to stay
+    if (jailValue > 0) {
+      return false;
+    }
+    
+    // Negative jail value means we want to leave
+    // More negative = more willing to pay
+    const willingnessToPay = Math.abs(jailValue);
+    
+    // Personality factor
+    const threshold = this.personality.jailEarlyGameValue;
+    
+    return willingnessToPay > threshold;
+  }
+  
+  shouldUseGetOutOfJailCard(player: Player, gameState: GameState): boolean {
+    // Similar logic to paying fine, but factor in card value
+    const jailValue = this.calculateJailValue(
+      player,
+      gameState,
+      this.determineGamePhase(gameState)
+    );
+    
+    // Jail is very bad and we have low cash
+    if (jailValue < -0.5 && player.cash < 200) {
+      return true;
+    }
+    
+    // Aggressive: use card early
+    if (this.personality.riskTolerance > 0.7) {
+      return jailValue < -0.3;
+    }
+    
+    // Cautious: save card for emergencies
+    if (this.personality.riskTolerance < 0.4) {
+      return jailValue < -0.7 && player.cash < 100;
+    }
+    
+    return jailValue < -0.5;
+  }
+  
+  private calculateJailValue(
+    player: Player,
+    gameState: GameState,
+    gamePhase: string
+  ): number {
+    // Early game: jail is bad (want to buy properties)
+    if (gamePhase === 'EARLY') {
+      return this.personality.jailEarlyGameValue;
+    }
+    
+    // Late game: jail might be good (avoid landing on opponent properties)
+    if (gamePhase === 'LATE') {
+      const opponentThreat = this.calculateOpponentThreat(player, gameState);
+      
+      // High threat = jail is good
+      if (opponentThreat > 0.7) {
+        return this.personality.jailLateGameValue;
+      }
+    }
+    
+    // Mid game or low threat late game
+    const monopolies = this.countPlayerMonopolies(player, gameState);
+    
+    // If we have monopolies and want to collect rent, get out
+    if (monopolies > 0) {
+      return -0.5;
+    }
+    
+    return 0;
+  }
+  
+  private calculateOpponentThreat(player: Player, gameState: GameState): number {
+    let maxThreat = 0;
+    
+    for (const opponent of gameState.players) {
+      if (opponent.id === player.id) continue;
+      
+      let threat = 0;
+      
+      // Threat from monopolies with buildings
+      const monopolies = this.getPlayerMonopolies(opponent, gameState);
+      for (const monopoly of monopolies) {
+        const avgBuildings = monopoly.properties.reduce((sum, p) => sum + p.buildings, 0) / monopoly.properties.length;
+        threat += avgBuildings * 0.2;
+      }
+      
+      // Threat from strong financial position
+      const wealthRatio = opponent.cash / (player.cash || 1);
+      threat += Math.min(wealthRatio * 0.1, 0.3);
+      
+      maxThreat = Math.max(maxThreat, Math.min(threat, 1));
+    }
+    
+    return maxThreat;
+  }
+}
+```
+
+## 11. Bankruptcy Handling
+
+```typescript
+class BankruptcyHandler {
+  constructor(
+    private mortgageStrategy: MortgageStrategy,
+    private buildingStrategy: BuildingStrategy,
+    private personality: PersonalityConfig
+  ) {}
+  
+  handleBankruptcy(
+    debt: number,
+    creditor: Player | 'BANK',
+    player: Player,
+    gameState: GameState
+  ): BankruptcyAction {
+    // Try to raise money through various means
+    const plan = this.createSurvivalPlan(debt, player, gameState);
+    
+    if (plan.canSurvive) {
+      return {
+        type: 'SURVIVE',
+        actions: plan.actions,
+      };
+    }
+    
+    // Cannot survive - declare bankruptcy
+    return {
+      type: 'DECLARE_BANKRUPTCY',
+      creditor: creditor === 'BANK' ? null : creditor.id,
+    };
+  }
+  
+  private createSurvivalPlan(
+    debt: number,
+    player: Player,
+    gameState: GameState
+  ): SurvivalPlan {
+    const actions: BankruptcyAction[] = [];
+    let availableCash = player.cash;
+    const amountNeeded = debt - availableCash;
+    
+    if (amountNeeded <= 0) {
+      return { canSurvive: true, actions: [] };
+    }
+    
+    let amountRaised = 0;
+    
+    // Step 1: Sell buildings (most valuable assets)
+    const buildingsValue = this.calculateTotalBuildingsValue(player, gameState);
+    if (buildingsValue > 0) {
+      const sellActions = this.createBuildingSellPlan(
+        Math.min(amountNeeded, buildingsValue),
+        player,
+        gameState
+      );
+      actions.push(...sellActions);
+      amountRaised += sellActions.reduce((sum, a) => sum + a.value, 0);
+    }
+    
+    if (amountRaised >= amountNeeded) {
+      return { canSurvive: true, actions };
+    }
+    
+    // Step 2: Mortgage properties
+    const mortgageableValue = this.calculateMortgageableValue(player, gameState);
+    if (mortgageableValue > 0) {
+      const mortgageActions = this.mortgageStrategy.selectPropertiesToMortgage(
+        amountNeeded - amountRaised,
+        player,
+        gameState
+      );
+      actions.push(...mortgageActions.map(p => ({
+        type: 'MORTGAGE',
+        propertyId: p.id,
+        value: p.mortgageValue,
+      })));
+      amountRaised += mortgageActions.reduce((sum, p) => sum + p.mortgageValue, 0);
+    }
+    
+    if (amountRaised >= amountNeeded) {
+      return { canSurvive: true, actions };
+    }
+    
+    // Step 3: Cannot raise enough money
+    return { canSurvive: false, actions: [] };
+  }
+  
+  private createBuildingSellPlan(
+    amountNeeded: number,
+    player: Player,
+    gameState: GameState
+  ): BuildingAction[] {
+    const actions: BuildingAction[] = [];
+    let amountRaised = 0;
+    
+    // Get all monopolies with buildings
+    const monopolies = this.getPlayerMonopolies(player, gameState)
+      .filter(m => m.properties.some(p => p.buildings > 0));
+    
+    // Rank by "sell priority" (sell least valuable first)
+    const rankedMonopolies = this.rankMonopoliesForSelling(monopolies, player, gameState);
+    
+    for (const monopoly of rankedMonopolies) {
+      if (amountRaised >= amountNeeded) break;
+      
+      // Sell buildings evenly (reverse of building)
+      while (amountRaised < amountNeeded) {
+        const highestBuilt = monopoly.properties
+          .filter(p => p.buildings > 0)
+          .sort((a, b) => b.buildings - a.buildings)[0];
+        
+        if (!highestBuilt) break;
+        
+        const sellValue = highestBuilt.houseCost * 0.5; // Sell at half price
+        actions.push({
+          type: highestBuilt.buildings === 5 ? 'SELL_HOTEL' : 'SELL_HOUSE',
+          propertyId: highestBuilt.id,
+          value: sellValue,
+        });
+        
+        highestBuilt.buildings--;
+        amountRaised += sellValue;
+      }
+    }
+    
+    return actions;
+  }
+  
+  private rankMonopoliesForSelling(
+    monopolies: Monopoly[],
+    player: Player,
+    gameState: GameState
+  ): Monopoly[] {
+    // Sell in reverse order of building priority
+    return monopolies.sort((a, b) => {
+      const priorityA = this.buildingStrategy.calculateMonopolyBuildingPriority(a, player, gameState);
+      const priorityB = this.buildingStrategy.calculateMonopolyBuildingPriority(b, player, gameState);
+      return priorityA - priorityB; // Lower priority first
+    });
+  }
+}
+```
+
+## 12. Main Bot Controller
+
+```typescript
+class MonopolyBot implements BotPlayer {
+  private propertyEvaluator: PropertyEvaluator;
+  private purchaseDecision: PropertyPurchaseDecision;
+  private auctionStrategy: AuctionBidStrategy;
+  private buildingStrategy: BuildingStrategy;
+  private tradingStrategy: TradingStrategy;
+  private mortgageStrategy: MortgageStrategy;
+  private jailStrategy: JailStrategy;
+  private bankruptcyHandler: BankruptcyHandler;
+  
+  constructor(
+    public id: string,
+    public name: string,
+    public personality: BotPersonality
+  ) {
+    const config = PERSONALITY_CONFIGS[personality];
+    
+    this.propertyEvaluator = new PropertyEvaluator();
+    this.purchaseDecision = new PropertyPurchaseDecision(this.propertyEvaluator, config);
+    this.auctionStrategy = new AuctionBidStrategy(this.propertyEvaluator, config);
+    this.buildingStrategy = new BuildingStrategy(config);
+    this.tradingStrategy = new TradingStrategy(this.propertyEvaluator, config);
+    this.mortgageStrategy = new MortgageStrategy(config);
+    this.jailStrategy = new JailStrategy(config);
+    this.bankruptcyHandler = new BankruptcyHandler(
+      this.mortgageStrategy,
+      this.buildingStrategy,
+      config
+    );
+  }
+  
+  // Main decision method called by game engine
+  async makeDecision(
+    action: GameAction,
+    gameState: GameState
+  ): Promise<BotDecision> {
+    // Add slight delay for realism
+    await this.delay(500 + Math.random() * 1000);
+    
+    switch (action.type) {
+      case 'BUY_PROPERTY':
+        return this.decideBuyProperty(action, gameState);
+        
+      case 'AUCTION_BID':
+        return this.decideAuctionBid(action, gameState);
+        
+      case 'BUILD':
+        return this.decideBuild(gameState);
+        
+      case 'TRADE_OFFER':
+        return this.decideTradeOffer(action, gameState);
+        
+      case 'PROPOSE_TRADE':
+        return this.proposeTradeAction(gameState);
+        
+      case 'MORTGAGE':
+        return this.decideMortgage(action, gameState);
+        
+      case 'UNMORTGAGE':
+        return this.decideUnmortgage(action, gameState);
+        
+      case 'JAIL_DECISION':
+        return this.decideJailAction(gameState);
+        
+      case 'BANKRUPTCY':
+        return this.handleBankruptcyAction(action, gameState);
+        
+      default:
+        return { type: 'NO_ACTION' };
+    }
+  }
+  
+  private decideBuyProperty(
+    action: BuyPropertyAction,
+    gameState: GameState
+  ): BotDecision {
+    const shouldBuy = this.purchaseDecision.shouldBuyProperty(
+      action.property,
+      gameState.currentPlayer,
+      gameState
+    );
+    
+    return {
+      type: shouldBuy ? 'BUY' : 'AUCTION',
+      reasoning: shouldBuy ? 'Property meets value threshold' : 'Property below value threshold',
+    };
+  }
+  
+  private decideAuctionBid(
+    action: AuctionAction,
+    gameState: GameState
+  ): BotDecision {
+    const bid = this.auctionStrategy.calculateBid(
+      action.property,
+      action.currentBid,
+      gameState.currentPlayer,
+      gameState,
+      action.auctionState
+    );
+    
+    if (bid === null) {
+      return {
+        type: 'PASS',
+        reasoning: 'Bid exceeds maximum value',
+      };
+    }
+    
+    return {
+      type: 'BID',
+      amount: bid,
+      reasoning: `Bidding ${bid} for strategic value`,
+    };
+  }
+  
+  private decideBuild(gameState: GameState): BotDecision {
+    const actions = this.buildingStrategy.selectBuildingActions(
+      gameState.currentPlayer,
+      gameState
+    );
+    
+    if (actions.length === 0) {
+      return {
+        type: 'NO_BUILD',
+        reasoning: 'No profitable building opportunities',
+      };
+    }
+    
+    return {
+      type: 'BUILD',
+      actions,
+      reasoning: `Building on ${actions.length} properties for maximum ROI`,
+    };
+  }
+  
+  private decideTradeOffer(
+    action: TradeOfferAction,
+    gameState: GameState
+  ): BotDecision {
+    const decision = this.tradingStrategy.evaluateTrade(
+      action.trade,
+      gameState.currentPlayer,
+      gameState
+    );
+    
+    if (decision.accept) {
+      return {
+        type: 'ACCEPT_TRADE',
+        reasoning: decision.reasoning,
+      };
+    }
+    
+    if (decision.counterOffer) {
+      return {
+        type: 'COUNTER_OFFER',
+        trade: decision.counterOffer,
+        reasoning: 'Proposing better value trade',
+      };
+    }
+    
+    return {
+      type: 'REJECT_TRADE',
+      reasoning: decision.reasoning,
+    };
+  }
+  
+  private proposeTradeAction(gameState: GameState): BotDecision {
+    const trade = this.tradingStrategy.proposeTrade(
+      gameState.currentPlayer,
+      gameState
+    );
+    
+    if (!trade) {
+      return {
+        type: 'NO_TRADE',
+        reasoning: 'No beneficial trades available',
+      };
+    }
+    
+    return {
+      type: 'PROPOSE_TRADE',
+      trade,
+      reasoning: 'Strategic trade opportunity identified',
+    };
+  }
+  
+  private decideJailAction(gameState: GameState): BotDecision {
+    const player = gameState.currentPlayer;
+    
+    // Check if we have get out of jail card
+    if (player.getOutOfJailCards > 0) {
+      if (this.jailStrategy.shouldUseGetOutOfJailCard(player, gameState)) {
+        return {
+          type: 'USE_JAIL_CARD',
+          reasoning: 'Using card for strategic advantage',
+        };
+      }
+    }
+    
+    // Check if we should pay fine
+    if (this.jailStrategy.shouldPayJailFine(player, gameState)) {
+      return {
+        type: 'PAY_JAIL_FINE',
+        reasoning: 'Paying fine to resume play',
+      };
+    }
+    
+    return {
+      type: 'ROLL_FOR_DOUBLES',
+      reasoning: 'Attempting to roll doubles',
+    };
+  }
+  
+  private handleBankruptcyAction(
+    action: BankruptcyAction,
+    gameState: GameState
+  ): BotDecision {
+    const result = this.bankruptcyHandler.handleBankruptcy(
+      action.debt,
+      action.creditor,
+      gameState.currentPlayer,
+      gameState
+    );
+    
+    return {
+      type: result.type,
+      actions: result.actions,
+      reasoning: result.type === 'SURVIVE' 
+        ? 'Liquidating assets to pay debt'
+        : 'Cannot raise sufficient funds',
+    };
+  }
+  
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+```
+
+## 13. Utility Functions & Types
+
+```typescript
+// Type definitions
+interface Property {
+  id: string;
+  name: string;
+  type: 'STREET' | 'RAILROAD' | 'UTILITY';
+  price: number;
+  colorGroup: ColorGroup;
+  rent: number[];
+  houseCost: number;
+  buildings: number; // 0-4 houses, 5 = hotel
+  isMortgaged: boolean;
+  mortgageValue: number;
+  owner?: string;
+}
+
+interface GameState {
+  board: Board;
+  players: Player[];
+  currentPlayer: Player;
+  turn: number;
+  phase: 'EARLY' | 'MID' | 'LATE';
+  availableHouses: number;
+  availableHotels: number;
+}
+
+interface Player {
+  id: string;
+  name: string;
+  cash: number;
+  properties: Property[];
+  position: number;
+  isInJail: boolean;
+  jailTurns: number;
+  getOutOfJailCards: number;
+  isBankrupt: boolean;
+}
+
+interface TradeOffer {
+  from: string;
+  to: string;
+  offering: TradeItem[];
+  requesting: TradeItem[];
+}
+
+interface TradeItem {
+  type: 'PROPERTY' | 'MONEY' | 'GET_OUT_OF_JAIL_CARD';
+  propertyId?: string;
+  amount?: number;
+}
+
+interface BuildingAction {
+  type: 'BUILD_HOUSE' | 'BUILD_HOTEL' | 'SELL_HOUSE' | 'SELL_HOTEL';
+  propertyId: string;
+  value?: number;
+}
+
+interface Monopoly {
+  colorGroup: ColorGroup;
+  properties: Property[];
+}
+
+enum ColorGroup {
+  BROWN = 'BROWN',
+  LIGHT_BLUE = 'LIGHT_BLUE',
+  PINK = 'PINK',
+  ORANGE = 'ORANGE',
+  RED = 'RED',
+  YELLOW = 'YELLOW',
+  GREEN = 'GREEN',
+  DARK_BLUE = 'DARK_BLUE',
+  RAILROAD = 'RAILROAD',
+  UTILITY = 'UTILITY',
+}
+
+// Utility helper functions
+class MonopolyUtils {
+  static getColorGroupProperties(
+    colorGroup: ColorGroup,
+    board: Board
+  ): Property[] {
+    return board.properties.filter(p => p.colorGroup === colorGroup);
+  }
+  
+  static hasMonopoly(
+    player: Player,
+    colorGroup: ColorGroup,
+    gameState: GameState
+  ): boolean {
+    const groupProperties = this.getColorGroupProperties(colorGroup, gameState.board);
+    return groupProperties.every(p => p.owner === player.id);
+  }
+  
+  static getPlayerMonopolies(
+    player: Player,
+    gameState: GameState
+  ): Monopoly[] {
+    const monopolies: Monopoly[] = [];
+    const colorGroups = Object.values(ColorGroup);
+    
+    for (const group of colorGroups) {
+      if (this.hasMonopoly(player, group, gameState)) {
+        const properties = this.getColorGroupProperties(group, gameState.board);
+        monopolies.push({ colorGroup: group, properties });
+      }
+    }
+    
+    return monopolies;
+  }
+  
+  static calculateTotalAssets(player: Player, gameState: GameState): number {
+    let total = player.cash;
+    
+    for (const property of player.properties) {
+      if (property.isMortgaged) {
+        total += property.mortgageValue * 0.9; // Account for unmortgage cost
+      } else {
+        total += property.price;
+      }
+      
+      // Add building value
+      if (property.type === 'STREET') {
+        total += property.buildings * property.houseCost * 0.5; // Buildings sell at half price
+      }
+    }
+    
+    return total;
+  }
+  
+  static getLandingProbability(property: Property, gameState: GameState): number {
+    // Simplified probability calculation
+    // In reality, you'd want to account for dice probabilities, Chance/Community Chest, etc.
+    const baseProb = 1 / 40; // 40 spaces on board
+    
+    // Certain spaces are landed on more frequently
+    const frequentSpaces = [5, 15, 25, 35]; // Example: positions after jail, etc.
+    if (frequentSpaces.includes(property.position)) {
+      return baseProb * 1.2;
+    }
+    
+    return baseProb;
+  }
+}
+```
+
+## 14. Integration with Game Engine
+
+```typescript
+// Hook into your game engine
+class GameEngine {
+  private bots: Map<string, MonopolyBot> = new Map();
+  
+  registerBot(player: Player, personality: BotPersonality): void {
+    const bot = new MonopolyBot(player.id, player.name, personality);
+    this.bots.set(player.id, bot);
+  }
+  
+  async executeBotTurn(player: Player, gameState: GameState): Promise<void> {
+    const bot = this.bots.get(player.id);
+    if (!bot) return;
+    
+    // Pre-turn actions (unmortgage, build, trade)
+    await this.handlePreTurnActions(bot, gameState);
+    
+    // Roll dice
+    const diceRoll = this.rollDice();
+    this.movePlayer(player, diceRoll);
+    
+    // Handle landing
+    await this.handleLanding(bot, player, gameState);
+    
+    // Post-turn actions
+    await this.handlePostTurnActions(bot, gameState);
+  }
+  
+  private async handlePreTurnActions(
+    bot: MonopolyBot,
+    gameState: GameState
+  ): Promise<void> {
+    // Check for unmortgage opportunities
+    // Check for building opportunities
+    // Check for trade proposals
+    
+    // Example: Building
+    const buildDecision = await bot.makeDecision(
+      { type: 'BUILD' },
+      gameState
+    );
+    
+    if (buildDecision.type === 'BUILD' && buildDecision.actions) {
+      this.executeBuildActions(buildDecision.actions, gameState);
+    }
+    
+    // Example: Trading
+    const tradeDecision = await bot.makeDecision(
+      { type: 'PROPOSE_TRADE' },
+      gameState
+    );
+    
+    if (tradeDecision.type === 'PROPOSE_TRADE' && tradeDecision.trade) {
+      await this.proposeTrade(tradeDecision.trade, gameState);
+    }
+  }
+  
+  private async handleLanding(
+    bot: MonopolyBot,
+    player: Player,
+    gameState: GameState
+  ): Promise<void> {
+    const space = gameState.board.spaces[player.position];
+    
+    switch (space.type) {
+      case 'PROPERTY':
+        if (!space.owner) {
+          const decision = await bot.makeDecision(
+            { type: 'BUY_PROPERTY', property: space },
+            gameState
+          );
+          
+          if (decision.type === 'BUY') {
+            this.buyProperty(player, space);
+          } else {
+            await this.runAuction(space, gameState);
+          }
+        } else if (space.owner !== player.id) {
+          this.payRent(player, space, gameState);
+        }
+        break;
+        
+      case 'CHANCE':
+      case 'COMMUNITY_CHEST':
+        this.drawCard(player, space.type, gameState);
+        break;
+        
+      case 'TAX':
+        this.payTax(player, space.amount);
+        break;
+        
+      case 'GO_TO_JAIL':
+        this.sendToJail(player);
+        break;
+    }
+  }
+}
+```
+
+## 15. Testing & Balancing
+
+```typescript
+class BotTester {
+  /**
+   * Run simulations to test bot performance
+   */
+  async runSimulation(config: SimulationConfig): Promise<SimulationResults> {
+    const results: GameResult[] = [];
+    
+    for (let i = 0; i < config.games; i++) {
+      const game = this.setupGame(config.botSetup);
+      const result = await game.play();
+      results.push(result);
+    }
+    
+    return this.analyzeResults(results);
+  }
+  
+  /**
+   * Analyze win rates by personality
+   */
+  private analyzeResults(results: GameResult[]): SimulationResults {
+    const analysis = {
+      totalGames: results.length,
+      winsByPersonality: {} as Record<BotPersonality, number>,
+      averageGameLength: 0,
+      bankruptcyRate: {} as Record<BotPersonality, number>,
+    };
+    
+    for (const result of results) {
+      // Analyze winner
+      analysis.winsByPersonality[result.winner.personality] = 
+        (analysis.winsByPersonality[result.winner.personality] || 0) + 1;
+      
+      // Track game length
+      analysis.averageGameLength += result.turns;
+      
+      // Track bankruptcies
+      for (const player of result.players) {
+        if (player.isBankrupt) {
+          analysis.bankruptcyRate[player.personality] = 
+            (analysis.bankruptcyRate[player.personality] || 0) + 1;
+        }
+      }
+    }
+    
+    analysis.averageGameLength /= results.length;
+    
+    return analysis;
+  }
+}
+```
+
+## Summary
+
+This implementation plan provides:
+
+1. **Modular Architecture**: Each decision type has its own strategy class
+2. **Personality-Driven**: Three distinct bot personalities with configurable parameters
+3. **Strategic Depth**: Considers monopoly completion, blocking, ROI, game phase
+4. **Comprehensive Coverage**: Handles all Monopoly actions (buy, auction, trade, build, mortgage, jail, bankruptcy)
+5. **Testable**: Includes simulation framework for balancing
+6. **Extensible**: Easy to add new personalities or tweak existing ones
+
+The bots use a value-based decision system where each action is evaluated based on immediate and strategic value, modified by personality traits. This creates varied and interesting gameplay while maintaining logical decision-making.

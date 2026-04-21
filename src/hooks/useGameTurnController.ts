@@ -178,20 +178,37 @@ export function useGameTurnController() {
         );
         finishLanding(intent.message);
         return;
-      case 'buy-property':
-        if (currentPlayer.money < intent.propertyPrice && game.settings.enableAuctions) {
-          dispatch(startAuction({ propertyPosition: intent.propertyPosition }));
-          dispatch(addActivityLog(`Auction started for ${intent.propertyName}.`));
-          return;
+      case 'buy-property': {
+        const canAfford = currentPlayer.money >= intent.propertyPrice;
+        let finalAction: 'buy' | 'auction' | 'pass' = 'buy';
+
+        if (currentPlayer.type === PlayerType.AI) {
+          const decision = advisor.decidePurchase(currentPlayer, activeLandingSquare, game.board);
+          if (decision.action === 'pass') {
+            finalAction = game.settings.enableAuctions ? 'auction' : 'pass';
+          } else if (!canAfford) {
+            finalAction = game.settings.enableAuctions ? 'auction' : 'pass';
+          }
+        } else if (!canAfford) {
+          finalAction = game.settings.enableAuctions ? 'auction' : 'pass';
         }
-        dispatch(
-          purchaseProperty({
-            playerId: currentPlayer.id,
-            propertyPosition: intent.propertyPosition,
-          })
-        );
-        finishLanding(intent.message);
+
+        if (finalAction === 'buy') {
+          dispatch(
+            purchaseProperty({
+              playerId: currentPlayer.id,
+              propertyPosition: intent.propertyPosition,
+            })
+          );
+          finishLanding(intent.message);
+        } else if (finalAction === 'auction') {
+          dispatch(startAuction({ propertyPosition: intent.propertyPosition }));
+          dispatch(addActivityLog(`${currentPlayer.name} passed on ${intent.propertyName}. Auction started.`));
+        } else {
+          finishLanding(`${currentPlayer.name} passed on ${intent.propertyName}.`);
+        }
         return;
+      }
       default:
         return;
     }
