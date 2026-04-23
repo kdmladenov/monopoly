@@ -4,6 +4,13 @@ import { GameState, Player } from '@/lib/game.types';
 import { canEndTurn, canRoll } from '@/lib/turns/turnController';
 import { Box, Paper, Typography, Button, Avatar } from '@mui/material';
 
+import { useDispatch } from 'react-redux';
+import { toggleHistoryLog } from '@/lib/features/notifications/notificationsSlice';
+import HistoryIcon from '@mui/icons-material/History';
+import { IconButton, Tooltip } from '@mui/material';
+
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+
 interface Props {
   game: GameState;
   currentPlayer: Player | undefined;
@@ -21,8 +28,18 @@ export default function TurnSidebar({
   onEndTurn,
   onDeclareBankruptcy,
 }: Props) {
+  const dispatch = useDispatch();
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#d1d5db' }}>
+      <Box sx={{ p: 1, borderBottom: '1px solid #94a3b8', display: 'flex', justifyContent: 'center', gap: 1 }}>
+        <NotificationBell />
+        <Tooltip title="Match History">
+          <IconButton onClick={() => dispatch(toggleHistoryLog())} sx={{ border: '2px solid #94a3b8', color: '#1e293b' }}>
+            <HistoryIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
       <Box
         sx={{
           flexGrow: 1,

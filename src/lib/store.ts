@@ -1,13 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit';
 import counterReducer from './features/counter/counterSlice';
 import gameReducer from './features/game/gameSlice';
+import notificationsReducer from './features/notifications/notificationsSlice';
+import { notificationMiddleware } from './store/middleware/notificationMiddleware';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       counter: counterReducer,
       game: gameReducer,
+      notifications: notificationsReducer,
     },
+    middleware: (getDefaultMiddleware) => 
+      getDefaultMiddleware().concat(notificationMiddleware),
   });
 };
 

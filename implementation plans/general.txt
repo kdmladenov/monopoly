@@ -1,0 +1,4394 @@
+# Comprehensive Monopoly Game Implementation Plan
+
+## Table of Contents
+1. [Project Setup & Architecture](#1-project-setup--architecture)
+2. [Core Game Logic & State Management](#2-core-game-logic--state-management)
+3. [Board & UI Components](#3-board--ui-components)
+4. [Player Management](#4-player-management)
+5. [Property System](#5-property-system)
+6. [Trading System](#6-trading-system)
+7. [Building System](#7-building-system)
+8. [Dice & Movement](#8-dice--movement)
+9. [Jail System](#9-jail-system)
+10. [Cards System (Chance & Community Chest)](#10-cards-system)
+11. [Banking & Financial Transactions](#11-banking--financial-transactions)
+12. [Auction System](#12-auction-system)
+13. [Bankruptcy & Elimination](#13-bankruptcy--elimination)
+14. [Bot/AI Players](#14-botai-players)
+15. [Notification & History System](#15-notification--history-system)
+16. [Multiplayer & Networking](#16-multiplayer--networking)
+17. [Game Settings & Customization](#17-game-settings--customization)
+18. [Animations & Visual Effects](#18-animations--visual-effects)
+19. [Sound & Music](#19-sound--music)
+20. [Save & Load System](#20-save--load-system)
+21. [Statistics & Analytics](#21-statistics--analytics)
+22. [Tutorial & Help System](#22-tutorial--help-system)
+23. [Testing Strategy](#23-testing-strategy)
+24. [Performance Optimization](#24-performance-optimization)
+25. [Deployment & CI/CD](#25-deployment--cicd)
+
+---
+
+## 1. Project Setup & Architecture
+
+### 1.1 Technology Stack Setup
+```typescript
+// Required dependencies and their purposes
+{
+  "dependencies": {
+    "next": "^14.0.0",           // React framework
+    "react": "^18.2.0",          // UI library
+    "react-dom": "^18.2.0",
+    "@reduxjs/toolkit": "^2.0.0", // State management
+    "react-redux": "^9.0.0",
+    "framer-motion": "^10.0.0",  // Animations
+    "socket.io-client": "^4.5.0", // Multiplayer
+    "zod": "^3.22.0",            // Schema validation
+    "zustand": "^4.4.0",         // Optional local state
+    "tailwindcss": "^3.3.0",     // Styling
+    "class-variance-authority": "^0.7.0", // Component variants
+    "clsx": "^2.0.0",            // Conditional classes
+    "date-fns": "^2.30.0",       // Date utilities
+    "uuid": "^9.0.0",            // Unique IDs
+    "immer": "^10.0.0",          // Immutable state
+    "react-hot-toast": "^2.4.0", // Toast notifications
+    "react-hook-form": "^7.48.0", // Form handling
+    "recharts": "^2.10.0"        // Statistics charts
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.2.0",
+    "eslint": "^8.54.0",
+    "prettier": "^3.1.0",
+    "jest": "^29.7.0",
+    "@testing-library/react": "^14.1.0",
+    "cypress": "^13.6.0"
+  }
+}
+```
+
+### 1.2 Project Structure
+```
+monopoly-game/
+├── src/
+│   ├── app/                    # Next.js app router
+│   │   ├── page.tsx           # Home page
+│   │   ├── game/
+│   │   │   └── [gameId]/
+│   │   │       └── page.tsx   # Game page
+│   │   ├── lobby/
+│   │   │   └── page.tsx       # Lobby page
+│   │   └── layout.tsx
+│   ├── components/
+│   │   ├── board/             # Board components
+│   │   ├── cards/             # Card components
+│   │   ├── players/           # Player components
+│   │   ├── properties/        # Property components
+│   │   ├── ui/                # Reusable UI components
+│   │   ├── modals/            # Modal dialogs
+│   │   ├── notifications/     # Notification system
+│   │   └── animations/        # Animation components
+│   ├── store/
+│   │   ├── slices/            # Redux slices
+│   │   │   ├── gameSlice.ts
+│   │   │   ├── playersSlice.ts
+│   │   │   ├── propertiesSlice.ts
+│   │   │   ├── tradingSlice.ts
+│   │   │   ├── notificationsSlice.ts
+│   │   │   └── uiSlice.ts
+│   │   ├── middleware/        # Custom middleware
+│   │   ├── selectors/         # Reselect selectors
+│   │   └── store.ts           # Store configuration
+│   ├── hooks/                 # Custom React hooks
+│   ├── services/              # Business logic services
+│   │   ├── GameEngine.ts
+│   │   ├── BotAI/
+│   │   ├── NotificationGenerator.ts
+│   │   └── NetworkService.ts
+│   ├── utils/                 # Utility functions
+│   ├── types/                 # TypeScript types
+│   ├── constants/             # Game constants
+│   ├── config/                # Configuration files
+│   ├── lib/                   # Third-party integrations
+│   └── styles/                # Global styles
+├── public/
+│   ├── assets/
+│   │   ├── images/
+│   │   ├── sounds/
+│   │   └── fonts/
+│   └── data/
+│       ├── properties.json
+│       ├── chance-cards.json
+│       └── community-chest.json
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── e2e/
+└── docs/
+    └── api/
+```
+
+### 1.3 Core Architecture Pattern
+```typescript
+// types/architecture.ts
+
+/**
+ * Core architectural patterns:
+ * - Flux architecture with Redux
+ * - Service layer for business logic
+ * - Component composition
+ * - Custom hooks for reusable logic
+ * - Middleware for side effects
+ */
+
+// Game Engine Pattern
+interface GameEngine {
+  initialize(): void;
+  startGame(): void;
+  processTurn(playerId: string): void;
+  executeAction(action: GameAction): GameResult;
+  validateAction(action: GameAction): ValidationResult;
+  getGameState(): GameState;
+}
+
+// Service Layer Pattern
+interface ServiceLayer {
+  gameService: GameService;
+  playerService: PlayerService;
+  propertyService: PropertyService;
+  tradeService: TradeService;
+  botService: BotService;
+  networkService: NetworkService;
+}
+
+// Repository Pattern for Data
+interface DataRepository {
+  properties: PropertyRepository;
+  cards: CardRepository;
+  players: PlayerRepository;
+  gameStates: GameStateRepository;
+}
+```
+
+---
+
+## 2. Core Game Logic & State Management
+
+### 2.1 Redux Store Structure
+```typescript
+// store/store.ts
+
+import { configureStore } from '@reduxjs/toolkit';
+import gameReducer from './slices/gameSlice';
+import playersReducer from './slices/playersSlice';
+import propertiesReducer from './slices/propertiesSlice';
+import tradingReducer from './slices/tradingSlice';
+import auctionReducer from './slices/auctionSlice';
+import notificationsReducer from './slices/notificationsSlice';
+import uiReducer from './slices/uiSlice';
+import statsReducer from './slices/statsSlice';
+
+export const store = configureStore({
+  reducer: {
+    game: gameReducer,
+    players: playersReducer,
+    properties: propertiesReducer,
+    trading: tradingReducer,
+    auction: auctionReducer,
+    notifications: notificationsReducer,
+    ui: uiReducer,
+    stats: statsReducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(
+      gameEngineMiddleware,
+      notificationMiddleware,
+      networkMiddleware,
+      analyticsMiddleware
+    ),
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+### 2.2 Game State Schema
+```typescript
+// types/gameState.ts
+
+interface GameState {
+  // Game meta
+  id: string;
+  createdAt: number;
+  updatedAt: number;
+  version: string;
+  
+  // Game status
+  status: GameStatus;
+  phase: GamePhase;
+  turn: number;
+  round: number;
+  
+  // Current state
+  currentPlayerId: string;
+  activePlayerId: string;
+  
+  // Turn state
+  turnState: {
+    diceRolled: boolean;
+    doublesCount: number;
+    canRollAgain: boolean;
+    hasMovedThisTurn: boolean;
+    actionsTaken: GameAction[];
+  };
+  
+  // Game configuration
+  config: GameConfig;
+  
+  // Board state
+  board: BoardState;
+  
+  // Available resources
+  availableHouses: number;
+  availableHotels: number;
+  
+  // Time tracking
+  turnStartTime?: number;
+  turnTimeLimit?: number;
+  
+  // Game history
+  history: GameHistoryEntry[];
+  
+  // Winner
+  winnerId?: string;
+  endedAt?: number;
+}
+
+enum GameStatus {
+  LOBBY = 'LOBBY',
+  STARTING = 'STARTING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  PAUSED = 'PAUSED',
+  FINISHED = 'FINISHED',
+}
+
+enum GamePhase {
+  SETUP = 'SETUP',
+  ROLL_DICE = 'ROLL_DICE',
+  MOVE = 'MOVE',
+  LAND_ON_SPACE = 'LAND_ON_SPACE',
+  DECISION = 'DECISION',
+  AUCTION = 'AUCTION',
+  TRADE = 'TRADE',
+  BUILD = 'BUILD',
+  BANKRUPTCY = 'BANKRUPTCY',
+  END_TURN = 'END_TURN',
+  GAME_OVER = 'GAME_OVER',
+}
+
+interface GameConfig {
+  // Player settings
+  minPlayers: number;
+  maxPlayers: number;
+  startingCash: number;
+  salaryAmount: number;
+  
+  // Building settings
+  maxHousesPerProperty: number;
+  maxHotelsPerProperty: number;
+  totalHouses: number;
+  totalHotels: number;
+  evenBuildingRule: boolean;
+  
+  // Jail settings
+  jailFine: number;
+  maxJailTurns: number;
+  
+  // Tax settings
+  incomeTax: number;
+  luxuryTax: number;
+  
+  // Auction settings
+  enableAuctions: boolean;
+  auctionStartBid: number;
+  auctionMinIncrement: number;
+  
+  // Trading settings
+  enableTrading: boolean;
+  allowCashInTrades: boolean;
+  allowGetOutOfJailCardTrades: boolean;
+  
+  // Time limits
+  turnTimeLimit?: number;
+  decisionTimeLimit?: number;
+  
+  // Game variants
+  freeParking: 'none' | 'collect' | 'fixed';
+  freeParkingAmount?: number;
+  landOnGoBonus: number;
+  
+  // Advanced rules
+  speedDie: boolean;
+  megaEdition: boolean;
+  doubleRentOnUnimprovedMonopoly: boolean;
+}
+
+interface BoardState {
+  spaces: BoardSpace[];
+  chanceCards: Card[];
+  communityChestCards: Card[];
+  chanceCardDeck: string[]; // Card IDs in deck order
+  communityChestDeck: string[];
+  chanceCardDiscardPile: string[];
+  communityChestDiscardPile: string[];
+}
+```
+
+### 2.3 Game Engine Implementation
+```typescript
+// services/GameEngine.ts
+
+class GameEngine {
+  private store: Store;
+  private eventEmitter: EventEmitter;
+  
+  constructor(store: Store) {
+    this.store = store;
+    this.eventEmitter = new EventEmitter();
+  }
+  
+  /**
+   * Initialize a new game
+   */
+  initializeGame(config: GameConfig, players: Player[]): void {
+    // Validate configuration
+    this.validateGameConfig(config);
+    
+    // Initialize board
+    const board = this.initializeBoard();
+    
+    // Shuffle card decks
+    const { chanceDeck, communityChestDeck } = this.shuffleDecks();
+    
+    // Set starting positions
+    players.forEach(player => {
+      player.position = 0;
+      player.cash = config.startingCash;
+    });
+    
+    // Determine turn order
+    const turnOrder = this.determineTurnOrder(players);
+    
+    // Dispatch initialization
+    this.store.dispatch(
+      gameActions.initialize({
+        config,
+        board,
+        players,
+        turnOrder,
+        chanceDeck,
+        communityChestDeck,
+      })
+    );
+    
+    this.emit('game:initialized');
+  }
+  
+  /**
+   * Start the game
+   */
+  startGame(): void {
+    const state = this.store.getState();
+    
+    if (state.game.status !== GameStatus.LOBBY) {
+      throw new Error('Cannot start game from current status');
+    }
+    
+    // Set first player
+    const firstPlayer = state.players.turnOrder[0];
+    
+    this.store.dispatch(
+      gameActions.start({
+        currentPlayerId: firstPlayer,
+        startTime: Date.now(),
+      })
+    );
+    
+    this.emit('game:started');
+    this.startTurn(firstPlayer);
+  }
+  
+  /**
+   * Process a turn
+   */
+  startTurn(playerId: string): void {
+    const state = this.store.getState();
+    const player = state.players.entities[playerId];
+    
+    // Check if player is bankrupt
+    if (player.isBankrupt) {
+      this.nextTurn();
+      return;
+    }
+    
+    // Initialize turn state
+    this.store.dispatch(
+      gameActions.startTurn({
+        playerId,
+        turnStartTime: Date.now(),
+      })
+    );
+    
+    // Check if player is in jail
+    if (player.isInJail) {
+      this.handleJailTurn(playerId);
+    } else {
+      this.setPhase(GamePhase.ROLL_DICE);
+    }
+    
+    this.emit('turn:started', { playerId });
+  }
+  
+  /**
+   * Roll dice
+   */
+  rollDice(playerId: string): DiceRoll {
+    const state = this.store.getState();
+    
+    // Validate can roll
+    if (!this.canRollDice(playerId)) {
+      throw new Error('Cannot roll dice at this time');
+    }
+    
+    const dice1 = this.randomDice();
+    const dice2 = this.randomDice();
+    const total = dice1 + dice2;
+    const isDoubles = dice1 === dice2;
+    
+    const roll: DiceRoll = {
+      dice1,
+      dice2,
+      total,
+      isDoubles,
+      playerId,
+      timestamp: Date.now(),
+    };
+    
+    this.store.dispatch(gameActions.rollDice(roll));
+    
+    // Handle doubles
+    if (isDoubles) {
+      this.handleDoubles(playerId);
+    }
+    
+    // Move player
+    this.movePlayer(playerId, total);
+    
+    this.emit('dice:rolled', roll);
+    
+    return roll;
+  }
+  
+  /**
+   * Move player
+   */
+  movePlayer(playerId: string, spaces: number): void {
+    const state = this.store.getState();
+    const player = state.players.entities[playerId];
+    const oldPosition = player.position;
+    let newPosition = (oldPosition + spaces) % 40;
+    
+    // Check if passed GO
+    const passedGo = newPosition < oldPosition || (oldPosition + spaces >= 40);
+    
+    if (passedGo) {
+      this.collectSalary(playerId);
+    }
+    
+    // Update position
+    this.store.dispatch(
+      playersActions.updatePosition({
+        playerId,
+        oldPosition,
+        newPosition,
+        passedGo,
+      })
+    );
+    
+    this.emit('player:moved', { playerId, oldPosition, newPosition, passedGo });
+    
+    // Handle landing
+    this.handleLanding(playerId, newPosition);
+  }
+  
+  /**
+   * Handle landing on a space
+   */
+  handleLanding(playerId: string, position: number): void {
+    const state = this.store.getState();
+    const space = state.game.board.spaces[position];
+    
+    this.setPhase(GamePhase.LAND_ON_SPACE);
+    
+    switch (space.type) {
+      case SpaceType.PROPERTY:
+        this.handlePropertyLanding(playerId, space as PropertySpace);
+        break;
+        
+      case SpaceType.RAILROAD:
+        this.handleRailroadLanding(playerId, space as RailroadSpace);
+        break;
+        
+      case SpaceType.UTILITY:
+        this.handleUtilityLanding(playerId, space as UtilitySpace);
+        break;
+        
+      case SpaceType.CHANCE:
+        this.drawChanceCard(playerId);
+        break;
+        
+      case SpaceType.COMMUNITY_CHEST:
+        this.drawCommunityChestCard(playerId);
+        break;
+        
+      case SpaceType.TAX:
+        this.payTax(playerId, space as TaxSpace);
+        break;
+        
+      case SpaceType.GO_TO_JAIL:
+        this.sendToJail(playerId);
+        break;
+        
+      case SpaceType.FREE_PARKING:
+        this.handleFreeParking(playerId);
+        break;
+        
+      case SpaceType.GO:
+      case SpaceType.JAIL:
+        // Just visiting, no action
+        this.endTurn();
+        break;
+    }
+    
+    this.emit('space:landed', { playerId, space });
+  }
+  
+  /**
+   * Execute a game action
+   */
+  executeAction(action: GameAction): GameResult {
+    // Validate action
+    const validation = this.validateAction(action);
+    
+    if (!validation.valid) {
+      return {
+        success: false,
+        error: validation.error,
+      };
+    }
+    
+    // Execute based on action type
+    switch (action.type) {
+      case GameActionType.BUY_PROPERTY:
+        return this.buyProperty(action.playerId, action.propertyId);
+        
+      case GameActionType.AUCTION_PROPERTY:
+        return this.startAuction(action.propertyId);
+        
+      case GameActionType.BUILD_HOUSE:
+        return this.buildHouse(action.playerId, action.propertyId);
+        
+      case GameActionType.BUILD_HOTEL:
+        return this.buildHotel(action.playerId, action.propertyId);
+        
+      case GameActionType.SELL_HOUSE:
+        return this.sellHouse(action.playerId, action.propertyId);
+        
+      case GameActionType.MORTGAGE_PROPERTY:
+        return this.mortgageProperty(action.playerId, action.propertyId);
+        
+      case GameActionType.UNMORTGAGE_PROPERTY:
+        return this.unmortgageProperty(action.playerId, action.propertyId);
+        
+      case GameActionType.PROPOSE_TRADE:
+        return this.proposeTrade(action.trade);
+        
+      case GameActionType.ACCEPT_TRADE:
+        return this.acceptTrade(action.tradeId);
+        
+      case GameActionType.REJECT_TRADE:
+        return this.rejectTrade(action.tradeId);
+        
+      case GameActionType.PAY_JAIL_FINE:
+        return this.payJailFine(action.playerId);
+        
+      case GameActionType.USE_JAIL_CARD:
+        return this.useGetOutOfJailCard(action.playerId);
+        
+      case GameActionType.DECLARE_BANKRUPTCY:
+        return this.declareBankruptcy(action.playerId);
+        
+      case GameActionType.END_TURN:
+        return this.endTurn();
+        
+      default:
+        return {
+          success: false,
+          error: 'Unknown action type',
+        };
+    }
+  }
+  
+  /**
+   * Validate an action
+   */
+  validateAction(action: GameAction): ValidationResult {
+    const state = this.store.getState();
+    
+    // Check if it's the player's turn
+    if (action.playerId !== state.game.currentPlayerId) {
+      return {
+        valid: false,
+        error: 'Not your turn',
+      };
+    }
+    
+    // Action-specific validation
+    switch (action.type) {
+      case GameActionType.BUY_PROPERTY:
+        return this.validateBuyProperty(action);
+        
+      case GameActionType.BUILD_HOUSE:
+        return this.validateBuildHouse(action);
+        
+      // ... other validations
+        
+      default:
+        return { valid: true };
+    }
+  }
+  
+  /**
+   * End current turn
+   */
+  endTurn(): GameResult {
+    const state = this.store.getState();
+    const currentPlayerId = state.game.currentPlayerId;
+    const turnState = state.game.turnState;
+    
+    // Check if player can roll again (doubles)
+    if (turnState.canRollAgain && !turnState.hasMovedThisTurn) {
+      return {
+        success: false,
+        error: 'Must roll again (doubles)',
+      };
+    }
+    
+    // Clear turn state
+    this.store.dispatch(gameActions.endTurn());
+    
+    this.emit('turn:ended', { playerId: currentPlayerId });
+    
+    // Move to next player
+    this.nextTurn();
+    
+    return { success: true };
+  }
+  
+  /**
+   * Move to next player
+   */
+  nextTurn(): void {
+    const state = this.store.getState();
+    const turnOrder = state.players.turnOrder;
+    const currentIndex = turnOrder.indexOf(state.game.currentPlayerId);
+    const nextIndex = (currentIndex + 1) % turnOrder.length;
+    const nextPlayerId = turnOrder[nextIndex];
+    
+    // Increment round if completed full rotation
+    if (nextIndex === 0) {
+      this.store.dispatch(gameActions.incrementRound());
+    }
+    
+    // Check for game end condition
+    if (this.checkGameEnd()) {
+      this.endGame();
+      return;
+    }
+    
+    // Start next turn
+    this.startTurn(nextPlayerId);
+  }
+  
+  /**
+   * Check if game should end
+   */
+  checkGameEnd(): boolean {
+    const state = this.store.getState();
+    const activePlayers = state.players.ids.filter(
+      id => !state.players.entities[id].isBankrupt
+    );
+    
+    return activePlayers.length === 1;
+  }
+  
+  /**
+   * End the game
+   */
+  endGame(): void {
+    const state = this.store.getState();
+    const activePlayers = state.players.ids.filter(
+      id => !state.players.entities[id].isBankrupt
+    );
+    
+    const winnerId = activePlayers[0];
+    
+    this.store.dispatch(
+      gameActions.endGame({
+        winnerId,
+        endTime: Date.now(),
+        finalStandings: this.calculateFinalStandings(),
+      })
+    );
+    
+    this.emit('game:ended', { winnerId });
+  }
+  
+  // Utility methods
+  private randomDice(): number {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+  
+  private emit(event: string, data?: any): void {
+    this.eventEmitter.emit(event, data);
+  }
+  
+  on(event: string, handler: Function): void {
+    this.eventEmitter.on(event, handler);
+  }
+}
+
+export default GameEngine;
+```
+
+### 2.4 Game Actions & Types
+```typescript
+// types/gameActions.ts
+
+enum GameActionType {
+  // Property actions
+  BUY_PROPERTY = 'BUY_PROPERTY',
+  AUCTION_PROPERTY = 'AUCTION_PROPERTY',
+  MORTGAGE_PROPERTY = 'MORTGAGE_PROPERTY',
+  UNMORTGAGE_PROPERTY = 'UNMORTGAGE_PROPERTY',
+  
+  // Building actions
+  BUILD_HOUSE = 'BUILD_HOUSE',
+  BUILD_HOTEL = 'BUILD_HOTEL',
+  SELL_HOUSE = 'SELL_HOUSE',
+  SELL_HOTEL = 'SELL_HOTEL',
+  
+  // Trading actions
+  PROPOSE_TRADE = 'PROPOSE_TRADE',
+  ACCEPT_TRADE = 'ACCEPT_TRADE',
+  REJECT_TRADE = 'REJECT_TRADE',
+  COUNTER_TRADE = 'COUNTER_TRADE',
+  CANCEL_TRADE = 'CANCEL_TRADE',
+  
+  // Auction actions
+  PLACE_BID = 'PLACE_BID',
+  PASS_BID = 'PASS_BID',
+  
+  // Movement actions
+  ROLL_DICE = 'ROLL_DICE',
+  MOVE = 'MOVE',
+  
+  // Jail actions
+  PAY_JAIL_FINE = 'PAY_JAIL_FINE',
+  USE_JAIL_CARD = 'USE_JAIL_CARD',
+  ROLL_FOR_DOUBLES = 'ROLL_FOR_DOUBLES',
+  
+  // Money actions
+  PAY_RENT = 'PAY_RENT',
+  PAY_TAX = 'PAY_TAX',
+  COLLECT_SALARY = 'COLLECT_SALARY',
+  RECEIVE_MONEY = 'RECEIVE_MONEY',
+  
+  // Bankruptcy actions
+  DECLARE_BANKRUPTCY = 'DECLARE_BANKRUPTCY',
+  TRANSFER_ASSETS = 'TRANSFER_ASSETS',
+  
+  // Turn actions
+  END_TURN = 'END_TURN',
+  
+  // Card actions
+  DRAW_CARD = 'DRAW_CARD',
+  EXECUTE_CARD = 'EXECUTE_CARD',
+}
+
+interface BaseGameAction {
+  type: GameActionType;
+  playerId: string;
+  timestamp: number;
+}
+
+interface BuyPropertyAction extends BaseGameAction {
+  type: GameActionType.BUY_PROPERTY;
+  propertyId: string;
+}
+
+interface BuildHouseAction extends BaseGameAction {
+  type: GameActionType.BUILD_HOUSE;
+  propertyId: string;
+  count: number;
+}
+
+type GameAction = 
+  | BuyPropertyAction
+  | BuildHouseAction
+  | /* ... other action types */;
+
+interface GameResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+```
+
+---
+
+## 3. Board & UI Components
+
+### 3.1 Board Layout Component
+```typescript
+// components/board/MonopolyBoard.tsx
+
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { BoardSpace } from './BoardSpace';
+import { PlayerToken } from './PlayerToken';
+import { DiceRoller } from './DiceRoller';
+import { CenterPanel } from './CenterPanel';
+
+export const MonopolyBoard: React.FC = () => {
+  const board = useSelector((state: RootState) => state.game.board);
+  const players = useSelector((state: RootState) => state.players);
+  
+  return (
+    <div className="monopoly-board relative w-full h-full">
+      {/* Board container */}
+      <div className="board-grid grid grid-cols-11 grid-rows-11 gap-0 aspect-square max-w-[1000px] mx-auto bg-green-100">
+        {/* Bottom row (spaces 0-10) */}
+        <div className="col-start-1 col-end-12 row-start-11 flex">
+          {board.spaces.slice(0, 11).map((space, index) => (
+            <BoardSpace key={space.id} space={space} position={index} side="bottom" />
+          ))}
+        </div>
+        
+        {/* Left column (spaces 11-19) */}
+        <div className="col-start-1 row-start-2 row-end-11 flex flex-col">
+          {board.spaces.slice(11, 20).map((space, index) => (
+            <BoardSpace key={space.id} space={space} position={index + 11} side="left" />
+          ))}
+        </div>
+        
+        {/* Top row (spaces 20-30) */}
+        <div className="col-start-1 col-end-12 row-start-1 flex">
+          {board.spaces.slice(20, 31).map((space, index) => (
+            <BoardSpace key={space.id} space={space} position={index + 20} side="top" />
+          ))}
+        </div>
+        
+        {/* Right column (spaces 31-39) */}
+        <div className="col-start-11 row-start-2 row-end-11 flex flex-col">
+          {board.spaces.slice(31, 40).map((space, index) => (
+            <BoardSpace key={space.id} space={space} position={index + 31} side="right" />
+          ))}
+        </div>
+        
+        {/* Center area */}
+        <div className="col-start-2 col-end-11 row-start-2 row-end-11">
+          <CenterPanel />
+        </div>
+        
+        {/* Player tokens */}
+        {players.ids.map(playerId => {
+          const player = players.entities[playerId];
+          return (
+            <PlayerToken
+              key={player.id}
+              player={player}
+              position={player.position}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+```
+
+### 3.2 Board Space Component
+```typescript
+// components/board/BoardSpace.tsx
+
+interface BoardSpaceProps {
+  space: BoardSpace;
+  position: number;
+  side: 'top' | 'right' | 'bottom' | 'left';
+}
+
+export const BoardSpace: React.FC<BoardSpaceProps> = ({ space, position, side }) => {
+  const isOwned = space.type === 'PROPERTY' && space.ownerId;
+  const owner = useSelector((state: RootState) => 
+    isOwned ? state.players.entities[space.ownerId] : null
+  );
+  
+  const getSpaceClassName = () => {
+    const base = 'board-space relative border border-black';
+    const sizeClasses = side === 'top' || side === 'bottom' 
+      ? 'h-24 flex-1' 
+      : 'w-24 flex-1';
+    
+    return `${base} ${sizeClasses}`;
+  };
+  
+  return (
+    <div
+      className={getSpaceClassName()}
+      data-position={position}
+      data-space-type={space.type}
+    >
+      {/* Property color bar */}
+      {space.type === 'PROPERTY' && (
+        <div 
+          className="h-6 w-full" 
+          style={{ backgroundColor: space.color }}
+        />
+      )}
+      
+      {/* Space content */}
+      <div className="space-content p-1 flex flex-col items-center justify-center text-xs">
+        <div className="space-name font-semibold text-center">
+          {space.name}
+        </div>
+        
+        {space.type === 'PROPERTY' && (
+          <div className="space-price text-gray-600">
+            ${space.price}
+          </div>
+        )}
+        
+        {/* Building indicators */}
+        {space.type === 'PROPERTY' && space.buildings > 0 && (
+          <div className="buildings flex gap-0.5 mt-1">
+            {space.buildings < 5 ? (
+              Array.from({ length: space.buildings }).map((_, i) => (
+                <div key={i} className="w-2 h-3 bg-green-600" />
+              ))
+            ) : (
+              <div className="w-4 h-4 bg-red-600 text-white text-xs flex items-center justify-center">
+                H
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Ownership indicator */}
+        {isOwned && owner && (
+          <div 
+            className="owner-indicator absolute top-0 right-0 w-3 h-3 rounded-full"
+            style={{ backgroundColor: owner.color }}
+          />
+        )}
+        
+        {/* Mortgage indicator */}
+        {space.isMortgaged && (
+          <div className="mortgage-indicator absolute inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+            <span className="text-white font-bold">M</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+```
+
+### 3.3 Player Token Component
+```typescript
+// components/board/PlayerToken.tsx
+
+interface PlayerTokenProps {
+  player: Player;
+  position: number;
+}
+
+export const PlayerToken: React.FC<PlayerTokenProps> = ({ player, position }) => {
+  const { x, y } = calculateTokenPosition(position, player.tokenOffset);
+  
+  return (
+    <motion.div
+      className="player-token absolute z-10"
+      style={{
+        left: `${x}px`,
+        top: `${y}px`,
+      }}
+      animate={{
+        left: `${x}px`,
+        top: `${y}px`,
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+      }}
+    >
+      <div
+        className="token-visual w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white font-bold"
+        style={{ backgroundColor: player.color }}
+        title={player.name}
+      >
+        {player.token}
+      </div>
+      
+      {player.isInJail && (
+        <div className="jail-indicator absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+          <span className="text-white text-xs">🔒</span>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+function calculateTokenPosition(position: number, offset: number): { x: number; y: number } {
+  // Calculate position based on board layout
+  // This depends on your specific board dimensions
+  const boardSize = 1000; // pixels
+  const spaceSize = boardSize / 11;
+  
+  // Position mapping logic
+  // Bottom: 0-10, Left: 11-19, Top: 20-30, Right: 31-39
+  
+  // ... calculation logic
+  
+  return { x: 0, y: 0 };
+}
+```
+
+### 3.4 Center Panel Component
+```typescript
+// components/board/CenterPanel.tsx
+
+export const CenterPanel: React.FC = () => {
+  const gameStatus = useSelector((state: RootState) => state.game.status);
+  const currentPlayer = useSelector(selectCurrentPlayer);
+  const turnState = useSelector((state: RootState) => state.game.turnState);
+  
+  return (
+    <div className="center-panel h-full flex flex-col items-center justify-center p-8 bg-white bg-opacity-80 rounded-lg">
+      {/* Game logo/title */}
+      <h1 className="text-4xl font-bold mb-8">MONOPOLY</h1>
+      
+      {/* Current player info */}
+      {currentPlayer && (
+        <div className="current-player mb-6 text-center">
+          <div className="text-lg font-semibold mb-2">Current Turn</div>
+          <div 
+            className="player-badge inline-flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ backgroundColor: currentPlayer.color + '20', color: currentPlayer.color }}
+          >
+            <span className="text-2xl">{currentPlayer.token}</span>
+            <span className="font-bold">{currentPlayer.name}</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Dice roller */}
+      {gameStatus === GameStatus.IN_PROGRESS && (
+        <DiceRoller />
+      )}
+      
+      {/* Quick stats */}
+      <div className="quick-stats mt-6 grid grid-cols-2 gap-4 text-sm">
+        <div className="stat">
+          <div className="text-gray-600">Round</div>
+          <div className="font-bold">{useSelector((state: RootState) => state.game.round)}</div>
+        </div>
+        <div className="stat">
+          <div className="text-gray-600">Houses Left</div>
+          <div className="font-bold">{useSelector((state: RootState) => state.game.availableHouses)}</div>
+        </div>
+        <div className="stat">
+          <div className="text-gray-600">Hotels Left</div>
+          <div className="font-bold">{useSelector((state: RootState) => state.game.availableHotels)}</div>
+        </div>
+        <div className="stat">
+          <div className="text-gray-600">Players Active</div>
+          <div className="font-bold">
+            {useSelector(selectActivePlayers).length}
+          </div>
+        </div>
+      </div>
+      
+      {/* Phase indicator */}
+      <div className="phase-indicator mt-6">
+        <PhaseIndicator phase={useSelector((state: RootState) => state.game.phase)} />
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## 4. Player Management
+
+### 4.1 Player State Schema
+```typescript
+// types/player.ts
+
+interface Player {
+  // Identity
+  id: string;
+  name: string;
+  avatar?: string;
+  color: string;
+  token: string; // emoji or icon
+  
+  // Player type
+  type: PlayerType;
+  botPersonality?: BotPersonality;
+  isLocal: boolean;
+  
+  // Game state
+  position: number;
+  cash: number;
+  netWorth: number;
+  
+  // Properties
+  propertyIds: string[];
+  
+  // Status
+  isActive: boolean;
+  isBankrupt: boolean;
+  bankruptTurn?: number;
+  
+  // Jail
+  isInJail: boolean;
+  jailTurns: number;
+  getOutOfJailCards: number;
+  
+  // Turn state
+  doublesCount: number;
+  lastRoll?: DiceRoll;
+  
+  // Statistics
+  stats: PlayerStats;
+  
+  // UI
+  tokenOffset: number; // For positioning multiple tokens on same space
+  
+  // Metadata
+  joinedAt: number;
+  lastActionAt: number;
+}
+
+enum PlayerType {
+  HUMAN = 'HUMAN',
+  BOT_CAUTIOUS = 'BOT_CAUTIOUS',
+  BOT_BALANCED = 'BOT_BALANCED',
+  BOT_AGGRESSIVE = 'BOT_AGGRESSIVE',
+}
+
+interface PlayerStats {
+  // Money
+  totalMoneyEarned: number;
+  totalMoneySpent: number;
+  totalRentPaid: number;
+  totalRentCollected: number;
+  totalTaxesPaid: number;
+  
+  // Properties
+  propertiesPurchased: number;
+  propertiesSold: number;
+  monopoliesFormed: number;
+  
+  // Buildings
+  housesBuilt: number;
+  hotelsBuilt: number;
+  housesSold: number;
+  hotelsSold: number;
+  
+  // Trading
+  tradesProposed: number;
+  tradesAccepted: number;
+  tradesRejected: number;
+  
+  // Jail
+  timesInJail: number;
+  jailFinesPaid: number;
+  
+  // Other
+  turnsPlayed: number;
+  doublesRolled: number;
+  chanceCardsDrawn: number;
+  communityChestCardsDrawn: number;
+}
+```
+
+### 4.2 Players Redux Slice
+```typescript
+// store/slices/playersSlice.ts
+
+import { createSlice, createEntityAdapter, PayloadAction } from '@reduxjs/toolkit';
+
+const playersAdapter = createEntityAdapter<Player>();
+
+interface PlayersState extends ReturnType<typeof playersAdapter.getInitialState> {
+  turnOrder: string[];
+  eliminatedOrder: string[];
+}
+
+const initialState: PlayersState = playersAdapter.getInitialState({
+  turnOrder: [],
+  eliminatedOrder: [],
+});
+
+const playersSlice = createSlice({
+  name: 'players',
+  initialState,
+  reducers: {
+    addPlayer: (state, action: PayloadAction<Player>) => {
+      playersAdapter.addOne(state, action.payload);
+      state.turnOrder.push(action.payload.id);
+    },
+    
+    removePlayer: (state, action: PayloadAction<string>) => {
+      const playerId = action.payload;
+      playersAdapter.removeOne(state, playerId);
+      state.turnOrder = state.turnOrder.filter(id => id !== playerId);
+    },
+    
+    updatePlayer: (state, action: PayloadAction<{ id: string; changes: Partial<Player> }>) => {
+      playersAdapter.updateOne(state, {
+        id: action.payload.id,
+        changes: action.payload.changes,
+      });
+    },
+    
+    updateCash: (state, action: PayloadAction<{ playerId: string; amount: number }>) => {
+      const { playerId, amount } = action.payload;
+      const player = state.entities[playerId];
+      if (player) {
+        player.cash += amount;
+        player.netWorth += amount;
+      }
+    },
+    
+    setCash: (state, action: PayloadAction<{ playerId: string; cash: number }>) => {
+      const { playerId, cash } = action.payload;
+      const player = state.entities[playerId];
+      if (player) {
+        const diff = cash - player.cash;
+        player.cash = cash;
+        player.netWorth += diff;
+      }
+    },
+    
+    updatePosition: (state, action: PayloadAction<{
+      playerId: string;
+      position: number;
+      passedGo?: boolean;
+    }>) => {
+      const { playerId, position } = action.payload;
+      const player = state.entities[playerId];
+      if (player) {
+        player.position = position;
+      }
+    },
+    
+    sendToJail: (state, action: PayloadAction<string>) => {
+      const player = state.entities[action.payload];
+      if (player) {
+        player.isInJail = true;
+        player.jailTurns = 0;
+        player.position = 10; // Jail position
+        player.stats.timesInJail++;
+      }
+    },
+    
+    releaseFromJail: (state, action: PayloadAction<string>) => {
+      const player = state.entities[action.payload];
+      if (player) {
+        player.isInJail = false;
+        player.jailTurns = 0;
+        player.doublesCount = 0;
+      }
+    },
+    
+    incrementJailTurns: (state, action: PayloadAction<string>) => {
+      const player = state.entities[action.payload];
+      if (player) {
+        player.jailTurns++;
+      }
+    },
+    
+    addProperty: (state, action: PayloadAction<{ playerId: string; propertyId: string }>) => {
+      const { playerId, propertyId } = action.payload;
+      const player = state.entities[playerId];
+      if (player && !player.propertyIds.includes(propertyId)) {
+        player.propertyIds.push(propertyId);
+      }
+    },
+    
+    removeProperty: (state, action: PayloadAction<{ playerId: string; propertyId: string }>) => {
+      const { playerId, propertyId } = action.payload;
+      const player = state.entities[playerId];
+      if (player) {
+        player.propertyIds = player.propertyIds.filter(id => id !== propertyId);
+      }
+    },
+    
+    declareBankruptcy: (state, action: PayloadAction<{ playerId: string; turn: number }>) => {
+      const { playerId, turn } = action.payload;
+      const player = state.entities[playerId];
+      if (player) {
+        player.isBankrupt = true;
+        player.isActive = false;
+        player.bankruptTurn = turn;
+        state.eliminatedOrder.push(playerId);
+      }
+    },
+    
+    updateStats: (state, action: PayloadAction<{
+      playerId: string;
+      stats: Partial<PlayerStats>;
+    }>) => {
+      const { playerId, stats } = action.payload;
+      const player = state.entities[playerId];
+      if (player) {
+        Object.assign(player.stats, stats);
+      }
+    },
+    
+    setTurnOrder: (state, action: PayloadAction<string[]>) => {
+      state.turnOrder = action.payload;
+    },
+  },
+});
+
+export const {
+  addPlayer,
+  removePlayer,
+  updatePlayer,
+  updateCash,
+  setCash,
+  updatePosition,
+  sendToJail,
+  releaseFromJail,
+  incrementJailTurns,
+  addProperty,
+  removeProperty,
+  declareBankruptcy,
+  updateStats,
+  setTurnOrder,
+} = playersSlice.actions;
+
+export default playersSlice.reducer;
+
+// Selectors
+export const playersSelectors = playersAdapter.getSelectors<RootState>(
+  (state) => state.players
+);
+
+export const selectActivePlayers = (state: RootState) =>
+  playersSelectors.selectAll(state).filter(p => !p.isBankrupt);
+
+export const selectCurrentPlayer = (state: RootState) => {
+  const currentId = state.game.currentPlayerId;
+  return currentId ? playersSelectors.selectById(state, currentId) : null;
+};
+
+export const selectPlayersByNetWorth = (state: RootState) =>
+  playersSelectors
+    .selectAll(state)
+    .sort((a, b) => b.netWorth - a.netWorth);
+```
+
+### 4.3 Player Panel Component
+```typescript
+// components/players/PlayerPanel.tsx
+
+export const PlayerPanel: React.FC = () => {
+  const players = useSelector(playersSelectors.selectAll);
+  const currentPlayerId = useSelector((state: RootState) => state.game.currentPlayerId);
+  
+  return (
+    <div className="player-panel grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+      {players.map(player => (
+        <PlayerCard
+          key={player.id}
+          player={player}
+          isCurrentTurn={player.id === currentPlayerId}
+        />
+      ))}
+    </div>
+  );
+};
+
+const PlayerCard: React.FC<{ player: Player; isCurrentTurn: boolean }> = ({
+  player,
+  isCurrentTurn,
+}) => {
+  return (
+    <div
+      className={`player-card p-4 rounded-lg border-2 ${
+        isCurrentTurn ? 'border-yellow-400 shadow-lg' : 'border-gray-300'
+      } ${player.isBankrupt ? 'opacity-50 grayscale' : ''}`}
+      style={{ backgroundColor: player.color + '10' }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-3xl">{player.token}</span>
+          <div>
+            <div className="font-bold">{player.name}</div>
+            {player.type !== PlayerType.HUMAN && (
+              <div className="text-xs text-gray-600">Bot</div>
+            )}
+          </div>
+        </div>
+        
+        {isCurrentTurn && (
+          <div className="bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-xs font-bold">
+            TURN
+          </div>
+        )}
+      </div>
+      
+      {/* Cash */}
+      <div className="mb-3">
+        <div className="text-sm text-gray-600">Cash</div>
+        <div className="text-2xl font-bold">${player.cash}</div>
+        <div className="text-xs text-gray-500">Net Worth: ${player.netWorth}</div>
+      </div>
+      
+      {/* Properties */}
+      <div className="mb-3">
+        <div className="text-sm text-gray-600">Properties</div>
+        <div className="font-semibold">{player.propertyIds.length}</div>
+      </div>
+      
+      {/* Status indicators */}
+      <div className="flex flex-wrap gap-1">
+        {player.isInJail && (
+          <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
+            🔒 Jail ({player.jailTurns}/3)
+          </span>
+        )}
+        
+        {player.getOutOfJailCards > 0 && (
+          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+            🎴 {player.getOutOfJailCards}
+          </span>
+        )}
+        
+        {player.isBankrupt && (
+          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+            💀 Bankrupt
+          </span>
+        )}
+      </div>
+      
+      {/* Property quick view */}
+      <div className="mt-3">
+        <PlayerPropertyList playerId={player.id} />
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## 5. Property System
+
+### 5.1 Property State Schema
+```typescript
+// types/property.ts
+
+interface BaseProperty {
+  id: string;
+  name: string;
+  type: PropertyType;
+  position: number;
+  
+  // Ownership
+  ownerId?: string;
+  isMortgaged: boolean;
+  
+  // Financial
+  price: number;
+  mortgageValue: number;
+  unmortgagePrice: number; // mortgage value * 1.1
+}
+
+interface StreetProperty extends BaseProperty {
+  type: PropertyType.STREET;
+  colorGroup: ColorGroup;
+  
+  // Rent structure
+  baseRent: number;
+  rentWithMonopoly: number;
+  rentWith1House: number;
+  rentWith2Houses: number;
+  rentWith3Houses: number;
+  rentWith4Houses: number;
+  rentWithHotel: number;
+  
+  // Building
+  houseCost: number;
+  hotelCost: number;
+  buildings: number; // 0-4 houses, 5 = hotel
+}
+
+interface RailroadProperty extends BaseProperty {
+  type: PropertyType.RAILROAD;
+  rent1Railroad: number;
+  rent2Railroads: number;
+  rent3Railroads: number;
+  rent4Railroads: number;
+}
+
+interface UtilityProperty extends BaseProperty {
+  type: PropertyType.UTILITY;
+  multiplier1Utility: number; // 4x dice
+  multiplier2Utilities: number; // 10x dice
+}
+
+type Property = StreetProperty | RailroadProperty | UtilityProperty;
+
+enum PropertyType {
+  STREET = 'STREET',
+  RAILROAD = 'RAILROAD',
+  UTILITY = 'UTILITY',
+}
+
+enum ColorGroup {
+  BROWN = 'BROWN',
+  LIGHT_BLUE = 'LIGHT_BLUE',
+  PINK = 'PINK',
+  ORANGE = 'ORANGE',
+  RED = 'RED',
+  YELLOW = 'YELLOW',
+  GREEN = 'GREEN',
+  DARK_BLUE = 'DARK_BLUE',
+}
+
+interface BoardSpace {
+  id: string;
+  name: string;
+  position: number;
+  type: SpaceType;
+  property?: Property;
+}
+
+enum SpaceType {
+  GO = 'GO',
+  PROPERTY = 'PROPERTY',
+  RAILROAD = 'RAILROAD',
+  UTILITY = 'UTILITY',
+  CHANCE = 'CHANCE',
+  COMMUNITY_CHEST = 'COMMUNITY_CHEST',
+  TAX = 'TAX',
+  FREE_PARKING = 'FREE_PARKING',
+  GO_TO_JAIL = 'GO_TO_JAIL',
+  JAIL = 'JAIL',
+}
+```
+
+### 5.2 Properties Redux Slice
+```typescript
+// store/slices/propertiesSlice.ts
+
+import { createSlice, createEntityAdapter } from '@reduxjs/toolkit';
+
+const propertiesAdapter = createEntityAdapter<Property>();
+
+const propertiesSlice = createSlice({
+  name: 'properties',
+  initialState: propertiesAdapter.getInitialState(),
+  reducers: {
+    initializeProperties: (state, action: PayloadAction<Property[]>) => {
+      propertiesAdapter.setAll(state, action.payload);
+    },
+    
+    setOwner: (state, action: PayloadAction<{ propertyId: string; ownerId: string }>) => {
+      const { propertyId, ownerId } = action.payload;
+      const property = state.entities[propertyId];
+      if (property) {
+        property.ownerId = ownerId;
+      }
+    },
+    
+    clearOwner: (state, action: PayloadAction<string>) => {
+      const property = state.entities[action.payload];
+      if (property) {
+        property.ownerId = undefined;
+      }
+    },
+    
+    mortgageProperty: (state, action: PayloadAction<string>) => {
+      const property = state.entities[action.payload];
+      if (property) {
+        property.isMortgaged = true;
+      }
+    },
+    
+    unmortgageProperty: (state, action: PayloadAction<string>) => {
+      const property = state.entities[action.payload];
+      if (property) {
+        property.isMortgaged = false;
+      }
+    },
+    
+    addBuilding: (state, action: PayloadAction<{ propertyId: string; count: number }>) => {
+      const { propertyId, count } = action.payload;
+      const property = state.entities[propertyId] as StreetProperty;
+      if (property && property.type === PropertyType.STREET) {
+        property.buildings = Math.min(5, property.buildings + count);
+      }
+    },
+    
+    removeBuilding: (state, action: PayloadAction<{ propertyId: string; count: number }>) => {
+      const { propertyId, count } = action.payload;
+      const property = state.entities[propertyId] as StreetProperty;
+      if (property && property.type === PropertyType.STREET) {
+        property.buildings = Math.max(0, property.buildings - count);
+      }
+    },
+    
+    transferProperty: (state, action: PayloadAction<{
+      propertyId: string;
+      fromPlayerId: string;
+      toPlayerId: string;
+    }>) => {
+      const { propertyId, toPlayerId } = action.payload;
+      const property = state.entities[propertyId];
+      if (property) {
+        property.ownerId = toPlayerId;
+      }
+    },
+  },
+});
+
+export const {
+  initializeProperties,
+  setOwner,
+  clearOwner,
+  mortgageProperty,
+  unmortgageProperty,
+  addBuilding,
+  removeBuilding,
+  transferProperty,
+} = propertiesSlice.actions;
+
+export default propertiesSlice.reducer;
+
+// Selectors
+export const propertiesSelectors = propertiesAdapter.getSelectors<RootState>(
+  (state) => state.properties
+);
+
+export const selectPlayerProperties = (playerId: string) => (state: RootState) =>
+  propertiesSelectors
+    .selectAll(state)
+    .filter(p => p.ownerId === playerId);
+
+export const selectPropertiesByColorGroup = (colorGroup: ColorGroup) => (state: RootState) =>
+  propertiesSelectors
+    .selectAll(state)
+    .filter(p => p.type === PropertyType.STREET && p.colorGroup === colorGroup);
+
+export const selectPlayerMonopolies = (playerId: string) => (state: RootState) => {
+  const monopolies: ColorGroup[] = [];
+  
+  Object.values(ColorGroup).forEach(group => {
+    const groupProperties = selectPropertiesByColorGroup(group)(state) as StreetProperty[];
+    const ownedByPlayer = groupProperties.filter(p => p.ownerId === playerId);
+    
+    if (groupProperties.length === ownedByPlayer.length) {
+      monopolies.push(group);
+    }
+  });
+  
+  return monopolies;
+};
+
+export const selectCanBuildOn = (propertyId: string) => (state: RootState) => {
+  const property = propertiesSelectors.selectById(state, propertyId) as StreetProperty;
+  
+  if (!property || property.type !== PropertyType.STREET || !property.ownerId) {
+    return false;
+  }
+  
+  // Must own monopoly
+  const monopolies = selectPlayerMonopolies(property.ownerId)(state);
+  if (!monopolies.includes(property.colorGroup)) {
+    return false;
+  }
+  
+  // Cannot be mortgaged
+  if (property.isMortgaged) {
+    return false;
+  }
+  
+  // Even building rule
+  const groupProperties = selectPropertiesByColorGroup(property.colorGroup)(state) as StreetProperty[];
+  const minBuildings = Math.min(...groupProperties.map(p => p.buildings));
+  const maxBuildings = Math.max(...groupProperties.map(p => p.buildings));
+  
+  // Can't build if this property already has the most buildings
+  if (property.buildings === maxBuildings && maxBuildings > minBuildings) {
+    return false;
+  }
+  
+  return property.buildings < 5;
+};
+```
+
+### 5.3 Property Card Component
+```typescript
+// components/properties/PropertyCard.tsx
+
+interface PropertyCardProps {
+  property: Property;
+  showActions?: boolean;
+}
+
+export const PropertyCard: React.FC<PropertyCardProps> = ({
+  property,
+  showActions = false,
+}) => {
+  const dispatch = useDispatch();
+  const owner = useSelector((state: RootState) =>
+    property.ownerId ? state.players.entities[property.ownerId] : null
+  );
+  const currentPlayer = useSelector(selectCurrentPlayer);
+  const isOwner = owner?.id === currentPlayer?.id;
+  
+  if (property.type === PropertyType.STREET) {
+    return <StreetPropertyCard property={property as StreetProperty} />;
+  } else if (property.type === PropertyType.RAILROAD) {
+    return <RailroadPropertyCard property={property as RailroadProperty} />;
+  } else {
+    return <UtilityPropertyCard property={property as UtilityProperty} />;
+  }
+};
+
+const StreetPropertyCard: React.FC<{ property: StreetProperty }> = ({ property }) => {
+  const colorMap: Record<ColorGroup, string> = {
+    [ColorGroup.BROWN]: '#8B4513',
+    [ColorGroup.LIGHT_BLUE]: '#87CEEB',
+    [ColorGroup.PINK]: '#FF1493',
+    [ColorGroup.ORANGE]: '#FFA500',
+    [ColorGroup.RED]: '#FF0000',
+    [ColorGroup.YELLOW]: '#FFFF00',
+    [ColorGroup.GREEN]: '#00FF00',
+    [ColorGroup.DARK_BLUE]: '#00008B',
+  };
+  
+  return (
+    <div className="property-card border-2 border-black rounded-lg overflow-hidden w-64 bg-white">
+      {/* Color bar */}
+      <div
+        className="h-12 flex items-center justify-center text-white font-bold text-lg"
+        style={{ backgroundColor: colorMap[property.colorGroup] }}
+      >
+        {property.name}
+      </div>
+      
+      {/* Property details */}
+      <div className="p-4">
+        <div className="text-center mb-4">
+          <div className="text-sm text-gray-600">PRICE</div>
+          <div className="text-2xl font-bold">${property.price}</div>
+        </div>
+        
+        {/* Rent table */}
+        <div className="space-y-1 text-sm mb-4">
+          <div className="flex justify-between">
+            <span>Rent</span>
+            <span className="font-semibold">${property.baseRent}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>With Color Set</span>
+            <span className="font-semibold">${property.rentWithMonopoly}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>With 1 House</span>
+            <span className="font-semibold">${property.rentWith1House}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>With 2 Houses</span>
+            <span className="font-semibold">${property.rentWith2Houses}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>With 3 Houses</span>
+            <span className="font-semibold">${property.rentWith3Houses}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>With 4 Houses</span>
+            <span className="font-semibold">${property.rentWith4Houses}</span>
+          </div>
+          <div className="flex justify-between border-t pt-1">
+            <span className="font-bold">With Hotel</span>
+            <span className="font-bold">${property.rentWithHotel}</span>
+          </div>
+        </div>
+        
+        {/* Building costs */}
+        <div className="border-t pt-2 space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span>House Cost</span>
+            <span className="font-semibold">${property.houseCost}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Hotel Cost</span>
+            <span className="font-semibold">${property.hotelCost}</span>
+          </div>
+        </div>
+        
+        {/* Mortgage value */}
+        <div className="border-t mt-2 pt-2 text-sm">
+          <div className="flex justify-between">
+            <span>Mortgage Value</span>
+            <span className="font-semibold">${property.mortgageValue}</span>
+          </div>
+        </div>
+        
+        {/* Current buildings */}
+        {property.buildings > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-1">
+            {property.buildings < 5 ? (
+              <>
+                {Array.from({ length: property.buildings }).map((_, i) => (
+                  <div key={i} className="w-6 h-8 bg-green-600 rounded" />
+                ))}
+              </>
+            ) : (
+              <div className="w-12 h-12 bg-red-600 rounded flex items-center justify-center text-white font-bold text-xl">
+                H
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Owner */}
+        {property.ownerId && (
+          <div className="mt-4 p-2 bg-gray-100 rounded text-center">
+            <div className="text-xs text-gray-600">Owned by</div>
+            <div className="font-semibold">{/* owner name */}</div>
+          </div>
+        )}
+        
+        {/* Mortgaged */}
+        {property.isMortgaged && (
+          <div className="mt-2 p-2 bg-red-100 text-red-800 rounded text-center font-semibold">
+            MORTGAGED
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## 6. Trading System
+
+[See previous comprehensive trading implementation plan]
+
+---
+
+## 7. Building System
+
+### 7.1 Building Logic Service
+```typescript
+// services/BuildingService.ts
+
+class BuildingService {
+  /**
+   * Validate building action
+   */
+  canBuild(
+    playerId: string,
+    propertyId: string,
+    count: number,
+    state: RootState
+  ): ValidationResult {
+    const property = state.properties.entities[propertyId] as StreetProperty;
+    const player = state.players.entities[playerId];
+    
+    if (!property || !player) {
+      return { valid: false, error: 'Invalid property or player' };
+    }
+    
+    // Must be a street property
+    if (property.type !== PropertyType.STREET) {
+      return { valid: false, error: 'Can only build on street properties' };
+    }
+    
+    // Must own the property
+    if (property.ownerId !== playerId) {
+      return { valid: false, error: 'You do not own this property' };
+    }
+    
+    // Must own all properties in color group
+    const monopolies = selectPlayerMonopolies(playerId)(state);
+    if (!monopolies.includes(property.colorGroup)) {
+      return { valid: false, error: 'Must own complete color group' };
+    }
+    
+    // Cannot be mortgaged
+    if (property.isMortgaged) {
+      return { valid: false, error: 'Cannot build on mortgaged property' };
+    }
+    
+    // Check even building rule
+    const groupProperties = selectPropertiesByColorGroup(property.colorGroup)(state) as StreetProperty[];
+    const buildingCounts = groupProperties.map(p => p.buildings);
+    const minBuildings = Math.min(...buildingCounts);
+    const maxBuildings = Math.max(...buildingCounts);
+    
+    if (property.buildings === maxBuildings && maxBuildings > minBuildings) {
+      return { valid: false, error: 'Must build evenly across color group' };
+    }
+    
+    // Check building limits
+    const newBuildingCount = property.buildings + count;
+    if (newBuildingCount > 5) {
+      return { valid: false, error: 'Cannot exceed 5 buildings (1 hotel)' };
+    }
+    
+    // Check available houses/hotels
+    if (newBuildingCount === 5 && count === 1) {
+      // Building hotel
+      if (state.game.availableHotels < 1) {
+        return { valid: false, error: 'No hotels available' };
+      }
+    } else {
+      // Building houses
+      if (state.game.availableHouses < count) {
+        return { valid: false, error: `Only ${state.game.availableHouses} houses available` };
+      }
+    }
+    
+    // Check if player can afford it
+    const cost = property.houseCost * count;
+    if (player.cash < cost) {
+      return { valid: false, error: 'Insufficient funds' };
+    }
+    
+    return { valid: true };
+  }
+  
+  /**
+   * Build houses/hotel
+   */
+  build(
+    playerId: string,
+    propertyId: string,
+    count: number,
+    dispatch: AppDispatch
+  ): GameResult {
+    // Validation is already done
+    const property = store.getState().properties.entities[propertyId] as StreetProperty;
+    const cost = property.houseCost * count;
+    
+    // Deduct cash
+    dispatch(updateCash({ playerId, amount: -cost }));
+    
+    // Add buildings
+    dispatch(addBuilding({ propertyId, count }));
+    
+    // Update available houses/hotels
+    if (property.buildings + count === 5) {
+      dispatch(gameActions.useHotel());
+      dispatch(gameActions.returnHouses(4)); // Return 4 houses when building hotel
+    } else {
+      dispatch(gameActions.useHouses(count));
+    }
+    
+    // Update stats
+    dispatch(updateStats({
+      playerId,
+      stats: {
+        housesBuilt: property.buildings + count < 5 ? count : 0,
+        hotelsBuilt: property.buildings + count === 5 ? 1 : 0,
+      },
+    }));
+    
+    return { success: true };
+  }
+  
+  /**
+   * Sell buildings
+   */
+  sell(
+    playerId: string,
+    propertyId: string,
+    count: number,
+    dispatch: AppDispatch
+  ): GameResult {
+    const property = store.getState().properties.entities[propertyId] as StreetProperty;
+    
+    // Selling gives back half the building cost
+    const returnValue = (property.houseCost * count) / 2;
+    
+    // Add cash
+    dispatch(updateCash({ playerId, amount: returnValue }));
+    
+    // Remove buildings
+    dispatch(removeBuilding({ propertyId, count }));
+    
+    // Return houses/hotels to bank
+    if (property.buildings === 5 && count >= 1) {
+      // Selling hotel
+      dispatch(gameActions.returnHotel());
+      if (count > 1) {
+        dispatch(gameActions.returnHouses(count - 1));
+      }
+    } else {
+      dispatch(gameActions.returnHouses(count));
+    }
+    
+    return { success: true, data: { returnValue } };
+  }
+}
+```
+
+### 7.2 Building Modal Component
+```typescript
+// components/modals/BuildingModal.tsx
+
+export const BuildingModal: React.FC<{ propertyId: string }> = ({ propertyId }) => {
+  const dispatch = useDispatch();
+  const property = useSelector((state: RootState) =>
+    state.properties.entities[propertyId]
+  ) as StreetProperty;
+  const currentPlayer = useSelector(selectCurrentPlayer);
+  const canBuild = useSelector(selectCanBuildOn(propertyId));
+  const availableHouses = useSelector((state: RootState) => state.game.availableHouses);
+  const availableHotels = useSelector((state: RootState) => state.game.availableHotels);
+  
+  const [buildCount, setBuildCount] = useState(1);
+  
+  const maxBuild = useMemo(() => {
+    if (!canBuild || !currentPlayer) return 0;
+    
+    const cashLimit = Math.floor(currentPlayer.cash / property.houseCost);
+    const buildingLimit = 5 - property.buildings;
+    const supplyLimit = property.buildings === 4 ? (availableHotels > 0 ? 1 : 0) : availableHouses;
+    
+    return Math.min(cashLimit, buildingLimit, supplyLimit);
+  }, [canBuild, currentPlayer, property, availableHouses, availableHotels]);
+  
+  const totalCost = property.houseCost * buildCount;
+  
+  const handleBuild = () => {
+    if (currentPlayer) {
+      dispatch(gameActions.buildHouse({
+        playerId: currentPlayer.id,
+        propertyId,
+        count: buildCount,
+      }));
+    }
+  };
+  
+  return (
+    <Modal title="Build Houses/Hotel" onClose={() => {}}>
+      <div className="building-modal p-6">
+        {/* Property info */}
+        <div className="mb-6">
+          <h3 className="text-lg font-bold mb-2">{property.name}</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Current Buildings:</span>
+              <span className="ml-2 font-semibold">{property.buildings}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">House Cost:</span>
+              <span className="ml-2 font-semibold">${property.houseCost}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Building selector */}
+        {canBuild && maxBuild > 0 ? (
+          <>
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">
+                Number of Houses to Build
+              </label>
+              <input
+                type="range"
+                min="1"
+                max={maxBuild}
+                value={buildCount}
+                onChange={(e) => setBuildCount(parseInt(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-sm mt-2">
+                <span>1</span>
+                <span className="font-bold">{buildCount}</span>
+                <span>{maxBuild}</span>
+              </div>
+            </div>
+            
+            {/* Visual preview */}
+            <div className="mb-6 flex items-center justify-center gap-2">
+              <div className="text-gray-600">Will have:</div>
+              {property.buildings + buildCount < 5 ? (
+                Array.from({ length: property.buildings + buildCount }).map((_, i) => (
+                  <div key={i} className="w-6 h-8 bg-green-600 rounded" />
+                ))
+              ) : (
+                <div className="w-12 h-12 bg-red-600 rounded flex items-center justify-center text-white font-bold text-xl">
+                  H
+                </div>
+              )}
+            </div>
+            
+            {/* Cost */}
+            <div className="mb-6 p-4 bg-gray-100 rounded">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Total Cost:</span>
+                <span className="text-2xl font-bold">${totalCost}</span>
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Cash remaining: ${(currentPlayer?.cash || 0) - totalCost}
+              </div>
+            </div>
+            
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleBuild}
+                className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700"
+              >
+                Build {buildCount} {buildCount === 1 ? 'House' : 'Houses'}
+              </button>
+              <button
+                onClick={() => {}}
+                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-8 text-gray-600">
+            {!canBuild ? 'Cannot build on this property' : 'No resources available to build'}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+};
+```
+
+---
+
+## 8. Dice & Movement
+
+### 8.1 Dice Component
+```typescript
+// components/board/DiceRoller.tsx
+
+export const DiceRoller: React.FC = () => {
+  const dispatch = useDispatch();
+  const currentPlayer = useSelector(selectCurrentPlayer);
+  const turnState = useSelector((state: RootState) => state.game.turnState);
+  const phase = useSelector((state: RootState) => state.game.phase);
+  const lastRoll = turnState.lastRoll;
+  
+  const [isRolling, setIsRolling] = useState(false);
+  const [dice1, setDice1] = useState(1);
+  const [dice2, setDice2] = useState(1);
+  
+  const canRoll = phase === GamePhase.ROLL_DICE && !turnState.diceRolled;
+  
+  const handleRoll = async () => {
+    if (!canRoll || !currentPlayer) return;
+    
+    setIsRolling(true);
+    
+    // Animate dice rolling
+    const rollDuration = 1000;
+    const rollInterval = 100;
+    const rollAnimation = setInterval(() => {
+      setDice1(Math.floor(Math.random() * 6) + 1);
+      setDice2(Math.floor(Math.random() * 6) + 1);
+    }, rollInterval);
+    
+    // Dispatch roll action
+    setTimeout(() => {
+      clearInterval(rollAnimation);
+      dispatch(gameActions.rollDice({ playerId: currentPlayer.id }));
+      setIsRolling(false);
+    }, rollDuration);
+  };
+  
+  useEffect(() => {
+    if (lastRoll) {
+      setDice1(lastRoll.dice1);
+      setDice2(lastRoll.dice2);
+    }
+  }, [lastRoll]);
+  
+  return (
+    <div className="dice-roller flex flex-col items-center gap-4">
+      {/* Dice display */}
+      <div className="flex gap-4">
+        <Die value={dice1} isRolling={isRolling} />
+        <Die value={dice2} isRolling={isRolling} />
+      </div>
+      
+      {/* Result */}
+      {lastRoll && (
+        <div className="text-center">
+          <div className="text-3xl font-bold">{lastRoll.total}</div>
+          {lastRoll.isDoubles && (
+            <div className="text-sm text-yellow-600 font-semibold">
+              DOUBLES! Roll again
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Roll button */}
+      <button
+        onClick={handleRoll}
+        disabled={!canRoll || isRolling}
+        className={`px-8 py-3 rounded-lg font-bold text-lg ${
+          canRoll && !isRolling
+            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
+      >
+        {isRolling ? 'Rolling...' : 'Roll Dice'}
+      </button>
+    </div>
+  );
+};
+
+const Die: React.FC<{ value: number; isRolling: boolean }> = ({ value, isRolling }) => {
+  return (
+    <motion.div
+      className="die w-16 h-16 bg-white border-2 border-gray-800 rounded-lg shadow-lg flex items-center justify-center"
+      animate={{
+        rotate: isRolling ? 360 : 0,
+      }}
+      transition={{
+        duration: 0.1,
+        repeat: isRolling ? Infinity : 0,
+      }}
+    >
+      <DiceDots value={value} />
+    </motion.div>
+  );
+};
+
+const DiceDots: React.FC<{ value: number }> = ({ value }) => {
+  const dotPatterns: Record<number, number[][]> = {
+    1: [[1, 1]],
+    2: [[0, 0], [2, 2]],
+    3: [[0, 0], [1, 1], [2, 2]],
+    4: [[0, 0], [0, 2], [2, 0], [2, 2]],
+    5: [[0, 0], [0, 2], [1, 1], [2, 0], [2, 2]],
+    6: [[0, 0], [0, 1], [0, 2], [2, 0], [2, 1], [2, 2]],
+  };
+  
+  const positions = dotPatterns[value] || [];
+  
+  return (
+    <div className="relative w-12 h-12">
+      <div className="grid grid-cols-3 grid-rows-3 w-full h-full">
+        {Array.from({ length: 9 }).map((_, i) => {
+          const row = Math.floor(i / 3);
+          const col = i % 3;
+          const hasDot = positions.some(([r, c]) => r === row && c === col);
+          
+          return (
+            <div key={i} className="flex items-center justify-center">
+              {hasDot && (
+                <div className="w-2 h-2 bg-black rounded-full" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## 9. Jail System
+
+### 9.1 Jail Logic
+```typescript
+// services/JailService.ts
+
+class JailService {
+  /**
+   * Send player to jail
+   */
+  sendToJail(playerId: string, dispatch: AppDispatch): void {
+    dispatch(sendToJail(playerId));
+    dispatch(updatePosition({ playerId, position: 10 }));
+    
+    // Reset doubles count
+    dispatch(gameActions.resetDoubles(playerId));
+  }
+  
+  /**
+   * Handle jail turn
+   */
+  handleJailTurn(playerId: string, state: RootState, dispatch: AppDispatch): void {
+    const player = state.players.entities[playerId];
+    
+    if (!player || !player.isInJail) return;
+    
+    // Check if max turns reached (auto-pay fine)
+    if (player.jailTurns >= 2) {
+      this.payJailFine(playerId, dispatch);
+      return;
+    }
+    
+    // Present options to player
+    dispatch(uiActions.showJailOptions(playerId));
+  }
+  
+  /**
+   * Pay jail fine
+   */
+  payJailFine(playerId: string, dispatch: AppDispatch): GameResult {
+    const state = store.getState();
+    const player = state.players.entities[playerId];
+    const config = state.game.config;
+    
+    if (!player) {
+      return { success: false, error: 'Player not found' };
+    }
+    
+    if (player.cash < config.jailFine) {
+      return { success: false, error: 'Insufficient funds' };
+    }
+    
+    // Pay fine
+    dispatch(updateCash({ playerId, amount: -config.jailFine }));
+    
+    // Release from jail
+    dispatch(releaseFromJail(playerId));
+    
+    // Update stats
+    dispatch(updateStats({
+      playerId,
+      stats: { jailFinesPaid: 1 },
+    }));
+    
+    return { success: true };
+  }
+  
+  /**
+   * Use Get Out of Jail Free card
+   */
+  useJailCard(playerId: string, dispatch: AppDispatch): GameResult {
+    const state = store.getState();
+    const player = state.players.entities[playerId];
+    
+    if (!player || player.getOutOfJailCards === 0) {
+      return { success: false, error: 'No card available' };
+    }
+    
+    // Use card
+    dispatch(playersActions.useGetOutOfJailCard(playerId));
+    
+    // Release from jail
+    dispatch(releaseFromJail(playerId));
+    
+    return { success: true };
+  }
+  
+  /**
+   * Attempt to roll doubles in jail
+   */
+  rollForDoubles(playerId: string, dispatch: AppDispatch): GameResult {
+    const dice1 = Math.floor(Math.random() * 6) + 1;
+    const dice2 = Math.floor(Math.random() * 6) + 1;
+    const isDoubles = dice1 === dice2;
+    
+    dispatch(gameActions.rollDice({
+      playerId,
+      dice1,
+      dice2,
+      total: dice1 + dice2,
+      isDoubles,
+    }));
+    
+    if (isDoubles) {
+      // Release from jail
+      dispatch(releaseFromJail(playerId));
+      
+      // Move player
+      dispatch(gameActions.movePlayer({
+        playerId,
+        spaces: dice1 + dice2,
+      }));
+      
+      return { success: true, data: { released: true } };
+    } else {
+      // Increment jail turns
+      dispatch(incrementJailTurns(playerId));
+      
+      return { success: true, data: { released: false } };
+    }
+  }
+}
+```
+
+---
+
+## 10. Cards System
+
+### 10.1 Card Types
+```typescript
+// types/cards.ts
+
+interface Card {
+  id: string;
+  type: CardType;
+  text: string;
+  action: CardAction;
+}
+
+enum CardType {
+  CHANCE = 'CHANCE',
+  COMMUNITY_CHEST = 'COMMUNITY_CHEST',
+}
+
+type CardAction =
+  | MoneyAction
+  | MoveAction
+  | GetOutOfJailAction
+  | RepairsAction
+  | PayPlayersAction;
+
+interface MoneyAction {
+  type: 'MONEY';
+  amount: number; // positive = collect, negative = pay
+}
+
+interface MoveAction {
+  type: 'MOVE';
+  destination: number | 'NEAREST_RAILROAD' | 'NEAREST_UTILITY' | 'GO' | 'JAIL' | 'BACK';
+  collectGo?: boolean;
+  spaces?: number; // for relative movement
+}
+
+interface GetOutOfJailAction {
+  type: 'GET_OUT_OF_JAIL';
+}
+
+interface RepairsAction {
+  type: 'REPAIRS';
+  perHouse: number;
+  perHotel: number;
+}
+
+interface PayPlayersAction {
+  type: 'PAY_PLAYERS';
+  amountPerPlayer: number;
+}
+```
+
+### 10.2 Card Data
+```json
+// public/data/chance-cards.json
+[
+  {
+    "id": "chance-1",
+    "type": "CHANCE",
+    "text": "Advance to Go (Collect $200)",
+    "action": {
+      "type": "MOVE",
+      "destination": 0,
+      "collectGo": true
+    }
+  },
+  {
+    "id": "chance-2",
+    "type": "CHANCE",
+    "text": "Advance to Illinois Avenue. If you pass Go, collect $200",
+    "action": {
+      "type": "MOVE",
+      "destination": 24,
+      "collectGo": true
+    }
+  },
+  {
+    "id": "chance-3",
+    "type": "CHANCE",
+    "text": "Advance to St. Charles Place. If you pass Go, collect $200",
+    "action": {
+      "type": "MOVE",
+      "destination": 11,
+      "collectGo": true
+    }
+  },
+  {
+    "id": "chance-4",
+    "type": "CHANCE",
+    "text": "Advance token to nearest Utility. If unowned, you may buy it from the Bank. If owned, pay owner 10 times dice roll",
+    "action": {
+      "type": "MOVE",
+      "destination": "NEAREST_UTILITY"
+    }
+  },
+  {
+    "id": "chance-5",
+    "type": "CHANCE",
+    "text": "Advance token to the nearest Railroad. If unowned, you may buy it from the Bank. If owned, pay owner twice the rent",
+    "action": {
+      "type": "MOVE",
+      "destination": "NEAREST_RAILROAD"
+    }
+  },
+  {
+    "id": "chance-6",
+    "type": "CHANCE",
+    "text": "Bank pays you dividend of $50",
+    "action": {
+      "type": "MONEY",
+      "amount": 50
+    }
+  },
+  {
+    "id": "chance-7",
+    "type": "CHANCE",
+    "text": "Get Out of Jail Free",
+    "action": {
+      "type": "GET_OUT_OF_JAIL"
+    }
+  },
+  {
+    "id": "chance-8",
+    "type": "CHANCE",
+    "text": "Go Back 3 Spaces",
+    "action": {
+      "type": "MOVE",
+      "destination": "BACK",
+      "spaces": -3
+    }
+  },
+  {
+    "id": "chance-9",
+    "type": "CHANCE",
+    "text": "Go to Jail. Go directly to Jail. Do not pass Go, do not collect $200",
+    "action": {
+      "type": "MOVE",
+      "destination": "JAIL"
+    }
+  },
+  {
+    "id": "chance-10",
+    "type": "CHANCE",
+    "text": "Make general repairs on all your property: For each house pay $25, For each hotel pay $100",
+    "action": {
+      "type": "REPAIRS",
+      "perHouse": 25,
+      "perHotel": 100
+    }
+  },
+  {
+    "id": "chance-11",
+    "type": "CHANCE",
+    "text": "Pay poor tax of $15",
+    "action": {
+      "type": "MONEY",
+      "amount": -15
+    }
+  },
+  {
+    "id": "chance-12",
+    "type": "CHANCE",
+    "text": "Take a trip to Reading Railroad. If you pass Go, collect $200",
+    "action": {
+      "type": "MOVE",
+      "destination": 5,
+      "collectGo": true
+    }
+  },
+  {
+    "id": "chance-13",
+    "type": "CHANCE",
+    "text": "Take a walk on the Boardwalk. Advance token to Boardwalk",
+    "action": {
+      "type": "MOVE",
+      "destination": 39
+    }
+  },
+  {
+    "id": "chance-14",
+    "type": "CHANCE",
+    "text": "You have been elected Chairman of the Board. Pay each player $50",
+    "action": {
+      "type": "PAY_PLAYERS",
+      "amountPerPlayer": 50
+    }
+  },
+  {
+    "id": "chance-15",
+    "type": "CHANCE",
+    "text": "Your building loan matures. Collect $150",
+    "action": {
+      "type": "MONEY",
+      "amount": 150
+    }
+  },
+  {
+    "id": "chance-16",
+    "type": "CHANCE",
+    "text": "You have won a crossword competition. Collect $100",
+    "action": {
+      "type": "MONEY",
+      "amount": 100
+    }
+  }
+]
+```
+
+### 10.3 Card Service
+```typescript
+// services/CardService.ts
+
+class CardService {
+  /**
+   * Draw a card
+   */
+  drawCard(cardType: CardType, playerId: string, dispatch: AppDispatch): Card {
+    const state = store.getState();
+    const deck = cardType === CardType.CHANCE 
+      ? state.game.board.chanceCardDeck
+      : state.game.board.communityChestDeck;
+    
+    // Get top card
+    const cardId = deck[0];
+    const card = cardType === CardType.CHANCE
+      ? state.game.board.chanceCards.find(c => c.id === cardId)
+      : state.game.board.communityChestCards.find(c => c.id === cardId);
+    
+    if (!card) {
+      throw new Error('No cards in deck');
+    }
+    
+    // Move card to discard pile (unless it's Get Out of Jail Free)
+    if (card.action.type !== 'GET_OUT_OF_JAIL') {
+      dispatch(gameActions.moveCardToDiscard({ cardType, cardId }));
+    } else {
+      // Give card to player
+      dispatch(playersActions.giveGetOutOfJailCard(playerId));
+      dispatch(gameActions.removeCardFromDeck({ cardType, cardId }));
+    }
+    
+    // Execute card action
+    this.executeCardAction(card, playerId, dispatch);
+    
+    return card;
+  }
+  
+  /**
+   * Execute card action
+   */
+  private executeCardAction(card: Card, playerId: string, dispatch: AppDispatch): void {
+    const action = card.action;
+    
+    switch (action.type) {
+      case 'MONEY':
+        dispatch(updateCash({ playerId, amount: action.amount }));
+        break;
+        
+      case 'MOVE':
+        this.handleMoveAction(action, playerId, dispatch);
+        break;
+        
+      case 'GET_OUT_OF_JAIL':
+        // Already handled in drawCard
+        break;
+        
+      case 'REPAIRS':
+        this.handleRepairsAction(action, playerId, dispatch);
+        break;
+        
+      case 'PAY_PLAYERS':
+        this.handlePayPlayersAction(action, playerId, dispatch);
+        break;
+    }
+  }
+  
+  private handleMoveAction(action: MoveAction, playerId: string, dispatch: AppDispatch): void {
+    const state = store.getState();
+    const player = state.players.entities[playerId];
+    
+    if (!player) return;
+    
+    let destination: number;
+    
+    if (typeof action.destination === 'number') {
+      destination = action.destination;
+    } else if (action.destination === 'BACK') {
+      destination = (player.position + (action.spaces || 0) + 40) % 40;
+    } else if (action.destination === 'JAIL') {
+      dispatch(sendToJail(playerId));
+      return;
+    } else if (action.destination === 'NEAREST_RAILROAD') {
+      const railroads = [5, 15, 25, 35];
+      destination = this.findNearest(player.position, railroads);
+    } else if (action.destination === 'NEAREST_UTILITY') {
+      const utilities = [12, 28];
+      destination = this.findNearest(player.position, utilities);
+    } else {
+      destination = 0; // GO
+    }
+    
+    const passedGo = destination < player.position || (action.collectGo && destination !== 0);
+    
+    if (passedGo && action.collectGo) {
+      dispatch(updateCash({ playerId, amount: state.game.config.salaryAmount }));
+    }
+    
+    dispatch(updatePosition({ playerId, position: destination, passedGo }));
+    
+    // Handle landing
+    dispatch(gameActions.handleLanding({ playerId, position: destination }));
+  }
+  
+  private handleRepairsAction(action: RepairsAction, playerId: string, dispatch: AppDispatch): void {
+    const state = store.getState();
+    const player = state.players.entities[playerId];
+    
+    if (!player) return;
+    
+    let totalCost = 0;
+    
+    player.propertyIds.forEach(propId => {
+      const property = state.properties.entities[propId] as StreetProperty;
+      if (property && property.type === PropertyType.STREET) {
+        if (property.buildings === 5) {
+          totalCost += action.perHotel;
+        } else {
+          totalCost += property.buildings * action.perHouse;
+        }
+      }
+    });
+    
+    dispatch(updateCash({ playerId, amount: -totalCost }));
+  }
+  
+  private handlePayPlayersAction(action: PayPlayersAction, playerId: string, dispatch: AppDispatch): void {
+    const state = store.getState();
+    const activePlayers = state.players.ids.filter(id => 
+      id !== playerId && !state.players.entities[id].isBankrupt
+    );
+    
+    const totalAmount = action.amountPerPlayer * activePlayers.length;
+    
+    // Deduct from current player
+    dispatch(updateCash({ playerId, amount: -totalAmount }));
+    
+    // Give to each player
+    activePlayers.forEach(id => {
+      dispatch(updateCash({ playerId: id, amount: action.amountPerPlayer }));
+    });
+  }
+  
+  private findNearest(currentPosition: number, positions: number[]): number {
+    for (const pos of positions) {
+      if (pos > currentPosition) {
+        return pos;
+      }
+    }
+    return positions[0]; // Wrap around
+  }
+  
+  /**
+   * Shuffle deck
+   */
+  shuffleDeck(cardType: CardType, dispatch: AppDispatch): void {
+    const state = store.getState();
+    const deck = cardType === CardType.CHANCE
+      ? [...state.game.board.chanceCardDeck, ...state.game.board.chanceCardDiscardPile]
+      : [...state.game.board.communityChestDeck, ...state.game.board.communityChestDiscardPile];
+    
+    // Fisher-Yates shuffle
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    
+    dispatch(gameActions.setDeck({ cardType, deck }));
+  }
+}
+```
+
+---
+
+## 11. Banking & Financial Transactions
+
+### 11.1 Banking Service
+```typescript
+// services/BankingService.ts
+
+class BankingService {
+  /**
+   * Transfer money between players
+   */
+  transfer(
+    fromPlayerId: string,
+    toPlayerId: string,
+    amount: number,
+    dispatch: AppDispatch
+  ): GameResult {
+    const state = store.getState();
+    const fromPlayer = state.players.entities[fromPlayerId];
+    
+    if (!fromPlayer) {
+      return { success: false, error: 'Player not found' };
+    }
+    
+    if (fromPlayer.cash < amount) {
+      return { success: false, error: 'Insufficient funds' };
+    }
+    
+    dispatch(updateCash({ playerId: fromPlayerId, amount: -amount }));
+    dispatch(updateCash({ playerId: toPlayerId, amount }));
+    
+    return { success: true };
+  }
+  
+  /**
+   * Collect salary (passing GO)
+   */
+  collectSalary(playerId: string, dispatch: AppDispatch): void {
+    const state = store.getState();
+    const salaryAmount = state.game.config.salaryAmount;
+    
+    dispatch(updateCash({ playerId, amount: salaryAmount }));
+    dispatch(updateStats({
+      playerId,
+      stats: { totalMoneyEarned: salaryAmount },
+    }));
+  }
+  
+  /**
+   * Pay rent
+   */
+  payRent(
+    fromPlayerId: string,
+    toPlayerId: string,
+    propertyId: string,
+    diceRoll?: number,
+    dispatch: AppDispatch
+  ): GameResult {
+    const state = store.getState();
+    const property = state.properties.entities[propertyId];
+    
+    if (!property || property.isMortgaged) {
+      return { success: false, error: 'Property is mortgaged' };
+    }
+    
+    const rentAmount = this.calculateRent(property, toPlayerId, diceRoll, state);
+    
+    const result = this.transfer(fromPlayerId, toPlayerId, rentAmount, dispatch);
+    
+    if (result.success) {
+      dispatch(updateStats({
+        playerId: fromPlayerId,
+        stats: { totalRentPaid: rentAmount },
+      }));
+      
+      dispatch(updateStats({
+        playerId: toPlayerId,
+        stats: { totalRentCollected: rentAmount },
+      }));
+    }
+    
+    return result;
+  }
+  
+  /**
+   * Calculate rent for a property
+   */
+  private calculateRent(
+    property: Property,
+    ownerId: string,
+    diceRoll: number | undefined,
+    state: RootState
+  ): number {
+    if (property.type === PropertyType.STREET) {
+      const streetProp = property as StreetProperty;
+      const monopolies = selectPlayerMonopolies(ownerId)(state);
+      const hasMonopoly = monopolies.includes(streetProp.colorGroup);
+      
+      if (streetProp.buildings === 0) {
+        return hasMonopoly ? streetProp.rentWithMonopoly : streetProp.baseRent;
+      } else if (streetProp.buildings === 1) {
+        return streetProp.rentWith1House;
+      } else if (streetProp.buildings === 2) {
+        return streetProp.rentWith2Houses;
+      } else if (streetProp.buildings === 3) {
+        return streetProp.rentWith3Houses;
+      } else if (streetProp.buildings === 4) {
+        return streetProp.rentWith4Houses;
+      } else {
+        return streetProp.rentWithHotel;
+      }
+    } else if (property.type === PropertyType.RAILROAD) {
+      const railroadProp = property as RailroadProperty;
+      const ownedRailroads = propertiesSelectors
+        .selectAll(state)
+        .filter(p => p.type === PropertyType.RAILROAD && p.ownerId === ownerId)
+        .length;
+      
+      switch (ownedRailroads) {
+        case 1: return railroadProp.rent1Railroad;
+        case 2: return railroadProp.rent2Railroads;
+        case 3: return railroadProp.rent3Railroads;
+        case 4: return railroadProp.rent4Railroads;
+        default: return 0;
+      }
+    } else if (property.type === PropertyType.UTILITY) {
+      const utilityProp = property as UtilityProperty;
+      const ownedUtilities = propertiesSelectors
+        .selectAll(state)
+        .filter(p => p.type === PropertyType.UTILITY && p.ownerId === ownerId)
+        .length;
+      
+      const multiplier = ownedUtilities === 1 
+        ? utilityProp.multiplier1Utility 
+        : utilityProp.multiplier2Utilities;
+      
+      return (diceRoll || 0) * multiplier;
+    }
+    
+    return 0;
+  }
+  
+  /**
+   * Calculate player's total assets
+   */
+  calculateNetWorth(playerId: string, state: RootState): number {
+    const player = state.players.entities[playerId];
+    if (!player) return 0;
+    
+    let netWorth = player.cash;
+    
+    // Add property values
+    player.propertyIds.forEach(propId => {
+      const property = state.properties.entities[propId];
+      if (property) {
+        if (property.isMortgaged) {
+          // Mortgaged properties contribute mortgage value minus unmortgage cost
+          netWorth += property.mortgageValue * 0.9;
+        } else {
+          netWorth += property.price;
+        }
+        
+        // Add building values
+        if (property.type === PropertyType.STREET) {
+          const streetProp = property as StreetProperty;
+          if (streetProp.buildings > 0) {
+            const buildingValue = streetProp.buildings * streetProp.houseCost * 0.5;
+            netWorth += buildingValue;
+          }
+        }
+      }
+    });
+    
+    // Add Get Out of Jail cards
+    netWorth += player.getOutOfJailCards * 50;
+    
+    return netWorth;
+  }
+}
+```
+
+---
+
+## 12. Auction System
+
+[See previous trading implementation - includes auction system]
+
+---
+
+## 13. Bankruptcy & Elimination
+
+### 13.1 Bankruptcy Service
+```typescript
+// services/BankruptcyService.ts
+
+class BankruptcyService {
+  /**
+   * Check if player can pay debt
+   */
+  canPayDebt(playerId: string, amount: number, state: RootState): boolean {
+    const player = state.players.entities[playerId];
+    if (!player) return false;
+    
+    // Calculate maximum possible liquid assets
+    let availableCash = player.cash;
+    
+    // Add mortgageable properties
+    player.propertyIds.forEach(propId => {
+      const property = state.properties.entities[propId];
+      if (property && !property.isMortgaged) {
+        availableCash += property.mortgageValue;
+      }
+    });
+    
+    // Add sellable buildings
+    player.propertyIds.forEach(propId => {
+      const property = state.properties.entities[propId] as StreetProperty;
+      if (property && property.type === PropertyType.STREET && property.buildings > 0) {
+        availableCash += property.buildings * property.houseCost * 0.5;
+      }
+    });
+    
+    return availableCash >= amount;
+  }
+  
+  /**
+   * Attempt to raise funds
+   */
+  raiseFunds(
+    playerId: string,
+    targetAmount: number,
+    dispatch: AppDispatch
+  ): GameResult {
+    const state = store.getState();
+    const player = state.players.entities[playerId];
+    
+    if (!player) {
+      return { success: false, error: 'Player not found' };
+    }
+    
+    let raisedAmount = 0;
+    const actions: string[] = [];
+    
+    // Strategy: Sell buildings first, then mortgage properties
+    
+    // 1. Sell buildings
+    const propertiesWithBuildings = player.propertyIds
+      .map(id => state.properties.entities[id] as StreetProperty)
+      .filter(p => p && p.type === PropertyType.STREET && p.buildings > 0)
+      .sort((a, b) => {
+        // Sell hotels before houses, expensive before cheap
+        if (a.buildings === 5 && b.buildings !== 5) return -1;
+        if (a.buildings !== 5 && b.buildings === 5) return 1;
+        return b.houseCost - a.houseCost;
+      });
+    
+    for (const property of propertiesWithBuildings) {
+      if (player.cash + raisedAmount >= targetAmount) break;
+      
+      const buildingsToSell = property.buildings;
+      const value = buildingsToSell * property.houseCost * 0.5;
+      
+      dispatch(removeBuilding({ propertyId: property.id, count: buildingsToSell }));
+      raisedAmount += value;
+      actions.push(`Sold ${buildingsToSell} buildings from ${property.name}`);
+    }
+    
+    // 2. Mortgage properties
+    if (player.cash + raisedAmount < targetAmount) {
+      const unmortgagedProperties = player.propertyIds
+        .map(id => state.properties.entities[id])
+        .filter(p => p && !p.isMortgaged)
+        .sort((a, b) => a!.mortgageValue - b!.mortgageValue); // Mortgage cheap first
+      
+      for (const property of unmortgagedProperties) {
+        if (player.cash + raisedAmount >= targetAmount) break;
+        
+        if (property) {
+          dispatch(mortgageProperty(property.id));
+          raisedAmount += property.mortgageValue;
+          actions.push(`Mortgaged ${property.name}`);
+        }
+      }
+    }
+    
+    // Update player cash
+    dispatch(updateCash({ playerId, amount: raisedAmount }));
+    
+    if (player.cash + raisedAmount >= targetAmount) {
+      return {
+        success: true,
+        data: { raisedAmount, actions },
+      };
+    } else {
+      return {
+        success: false,
+        error: 'Cannot raise sufficient funds',
+        data: { raisedAmount, actions, shortfall: targetAmount - (player.cash + raisedAmount) },
+      };
+    }
+  }
+  
+  /**
+   * Declare bankruptcy
+   */
+  declareBankruptcy(
+    playerId: string,
+    creditorId: string | 'BANK',
+    dispatch: AppDispatch
+  ): void {
+    const state = store.getState();
+    const player = state.players.entities[playerId];
+    
+    if (!player) return;
+    
+    // Mark player as bankrupt
+    dispatch(declareBankruptcy({ playerId, turn: state.game.turn }));
+    
+    // Transfer assets
+    if (creditorId === 'BANK') {
+      // Return all properties to bank
+      player.propertyIds.forEach(propId => {
+        const property = state.properties.entities[propId];
+        if (property) {
+          // Remove buildings
+          if (property.type === PropertyType.STREET) {
+            const streetProp = property as StreetProperty;
+            if (streetProp.buildings > 0) {
+              dispatch(removeBuilding({ propertyId: propId, count: streetProp.buildings }));
+            }
+          }
+          
+          // Unmortgage if needed
+          if (property.isMortgaged) {
+            dispatch(unmortgageProperty(propId));
+          }
+          
+          // Clear owner
+          dispatch(clearOwner(propId));
+        }
+      });
+    } else {
+      // Transfer everything to creditor
+      player.propertyIds.forEach(propId => {
+        dispatch(transferProperty({
+          propertyId: propId,
+          fromPlayerId: playerId,
+          toPlayerId: creditorId,
+        }));
+        
+        dispatch(addProperty({ playerId: creditorId, propertyId: propId }));
+      });
+      
+      // Transfer cash
+      if (player.cash > 0) {
+        dispatch(updateCash({ playerId: creditorId, amount: player.cash }));
+      }
+      
+      // Transfer Get Out of Jail cards
+      if (player.getOutOfJailCards > 0) {
+        dispatch(playersActions.transferGetOutOfJailCards({
+          fromPlayerId: playerId,
+          toPlayerId: creditorId,
+          count: player.getOutOfJailCards,
+        }));
+      }
+    }
+    
+    // Clear player properties
+    dispatch(playersActions.clearProperties(playerId));
+    
+    // Check if game should end
+    const activePlayers = state.players.ids.filter(
+      id => !state.players.entities[id].isBankrupt
+    );
+    
+    if (activePlayers.length === 1) {
+      dispatch(gameActions.endGame({
+        winnerId: activePlayers[0],
+        endTime: Date.now(),
+      }));
+    }
+  }
+}
+```
+
+---
+
+## 14. Bot/AI Players
+
+[See previous comprehensive bot implementation plan]
+
+---
+
+## 15. Notification & History System
+
+[See previous comprehensive notification implementation plan]
+
+---
+
+## 16. Multiplayer & Networking
+
+### 16.1 Socket.io Setup
+```typescript
+// lib/socket.ts
+
+import { io, Socket } from 'socket.io-client';
+
+class SocketService {
+  private socket: Socket | null = null;
+  private static instance: SocketService;
+  
+  private constructor() {}
+  
+  static getInstance(): SocketService {
+    if (!SocketService.instance) {
+      SocketService.instance = new SocketService();
+    }
+    return SocketService.instance;
+  }
+  
+  connect(serverUrl: string): void {
+    this.socket = io(serverUrl, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+    });
+    
+    this.setupListeners();
+  }
+  
+  private setupListeners(): void {
+    if (!this.socket) return;
+    
+    this.socket.on('connect', () => {
+      console.log('Connected to server');
+    });
+    
+    this.socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
+    
+    this.socket.on('error', (error) => {
+      console.error('Socket error:', error);
+    });
+  }
+  
+  emit(event: string, data: any): void {
+    if (this.socket) {
+      this.socket.emit(event, data);
+    }
+  }
+  
+  on(event: string, callback: (data: any) => void): void {
+    if (this.socket) {
+      this.socket.on(event, callback);
+    }
+  }
+  
+  off(event: string): void {
+    if (this.socket) {
+      this.socket.off(event);
+    }
+  }
+  
+  disconnect(): void {
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+  }
+}
+
+export default SocketService;
+```
+
+### 16.2 Network Middleware
+```typescript
+// store/middleware/networkMiddleware.ts
+
+import { Middleware } from '@reduxjs/toolkit';
+import SocketService from '@/lib/socket';
+
+export const networkMiddleware: Middleware = (store) => (next) => (action) => {
+  const socket = SocketService.getInstance();
+  
+  // Emit certain actions to server
+  if (shouldSyncAction(action.type)) {
+    socket.emit('game:action', {
+      type: action.type,
+      payload: action.payload,
+      timestamp: Date.now(),
+    });
+  }
+  
+  return next(action);
+};
+
+function shouldSyncAction(actionType: string): boolean {
+  const syncActions = [
+    'game/rollDice',
+    'game/buyProperty',
+    'game/proposeTrade',
+    'game/acceptTrade',
+    'game/buildHouse',
+    // ... other actions that should sync
+  ];
+  
+  return syncActions.includes(actionType);
+}
+```
+
+### 16.3 Multiplayer Lobby
+```typescript
+// components/multiplayer/Lobby.tsx
+
+export const MultiplayerLobby: React.FC = () => {
+  const [gameCode, setGameCode] = useState('');
+  const [playerName, setPlayerName] = useState('');
+  const [lobbyInfo, setLobbyInfo] = useState<LobbyInfo | null>(null);
+  const socket = SocketService.getInstance();
+  
+  useEffect(() => {
+    socket.on('lobby:updated', (info: LobbyInfo) => {
+      setLobbyInfo(info);
+    });
+    
+    socket.on('game:started', (gameId: string) => {
+      router.push(`/game/${gameId}`);
+    });
+    
+    return () => {
+      socket.off('lobby:updated');
+      socket.off('game:started');
+    };
+  }, []);
+  
+  const createGame = () => {
+    socket.emit('lobby:create', {
+      playerName,
+      settings: {
+        maxPlayers: 4,
+        // ... other settings
+      },
+    });
+  };
+  
+  const joinGame = () => {
+    socket.emit('lobby:join', {
+      gameCode,
+      playerName,
+    });
+  };
+  
+  return (
+    <div className="lobby p-8">
+      <h1 className="text-4xl font-bold mb-8">Multiplayer Lobby</h1>
+      
+      {!lobbyInfo ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Create game */}
+          <div className="create-game border rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Create Game</h2>
+            <input
+              type="text"
+              placeholder="Your name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              className="w-full px-4 py-2 border rounded mb-4"
+            />
+            <button
+              onClick={createGame}
+              className="w-full bg-blue-600 text-white py-3 rounded font-semibold"
+            >
+              Create Game
+            </button>
+          </div>
+          
+          {/* Join game */}
+          <div className="join-game border rounded-lg p-6">
+            <h2 className="text-2xl font-bold mb-4">Join Game</h2>
+            <input
+              type="text"
+              placeholder="Game code"
+              value={gameCode}
+              onChange={(e) => setGameCode(e.target.value)}
+              className="w-full px-4 py-2 border rounded mb-4"
+            />
+            <input
+              type="text"
+              placeholder="Your name"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              className="w-full px-4 py-2 border rounded mb-4"
+            />
+            <button
+              onClick={joinGame}
+              className="w-full bg-green-600 text-white py-3 rounded font-semibold"
+            >
+              Join Game
+            </button>
+          </div>
+        </div>
+      ) : (
+        <LobbyRoom info={lobbyInfo} />
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+## 17. Game Settings & Customization
+
+### 17.1 Settings Schema
+```typescript
+// types/settings.ts
+
+interface GameSettings {
+  // Basic rules
+  startingCash: number;
+  salaryAmount: number;
+  jailFine: number;
+  maxJailTurns: number;
+  
+  // Building rules
+  totalHouses: number;
+  totalHotels: number;
+  evenBuildingRule: boolean;
+  
+  // Auction settings
+  enableAuctions: boolean;
+  auctionStartBid: number;
+  
+  // Trading settings
+  enableTrading: boolean;
+  
+  // House rules
+  freeParking: 'none' | 'collect' | 'fixed';
+  freeParkingAmount?: number;
+  landOnGoBonus: number;
+  doubleRentOnUnimprovedMonopoly: boolean;
+  
+  // Time limits
+  turnTimeLimit?: number;
+  
+  // Game variants
+  speedDie: boolean;
+  megaEdition: boolean;
+}
+
+const DEFAULT_SETTINGS: GameSettings = {
+  startingCash: 1500,
+  salaryAmount: 200,
+  jailFine: 50,
+  maxJailTurns: 3,
+  totalHouses: 32,
+  totalHotels: 12,
+  evenBuildingRule: true,
+  enableAuctions: true,
+  auctionStartBid: 0,
+  enableTrading: true,
+  freeParking: 'none',
+  landOnGoBonus: 200,
+  doubleRentOnUnimprovedMonopoly: true,
+  speedDie: false,
+  megaEdition: false,
+};
+```
+
+### 17.2 Settings Component
+```typescript
+// components/settings/GameSettings.tsx
+
+export const GameSettings: React.FC = () => {
+  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
+  
+  const updateSetting = <K extends keyof GameSettings>(
+    key: K,
+    value: GameSettings[K]
+  ) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+  
+  return (
+    <div className="game-settings p-6">
+      <h2 className="text-2xl font-bold mb-6">Game Settings</h2>
+      
+      <div className="space-y-6">
+        {/* Starting cash */}
+        <div>
+          <label className="block font-semibold mb-2">Starting Cash</label>
+          <input
+            type="number"
+            value={settings.startingCash}
+            onChange={(e) => updateSetting('startingCash', parseInt(e.target.value))}
+            className="w-full px-4 py-2 border rounded"
+          />
+        </div>
+        
+        {/* Salary amount */}
+        <div>
+          <label className="block font-semibold mb-2">Salary (Pass GO)</label>
+          <input
+            type="number"
+            value={settings.salaryAmount}
+            onChange={(e) => updateSetting('salaryAmount', parseInt(e.target.value))}
+            className="w-full px-4 py-2 border rounded"
+          />
+        </div>
+        
+        {/* Free Parking */}
+        <div>
+          <label className="block font-semibold mb-2">Free Parking Rule</label>
+          <select
+            value={settings.freeParking}
+            onChange={(e) => updateSetting('freeParking', e.target.value as any)}
+            className="w-full px-4 py-2 border rounded"
+          >
+            <option value="none">None (Official Rules)</option>
+            <option value="collect">Collect All Taxes</option>
+            <option value="fixed">Fixed Amount</option>
+          </select>
+          
+          {settings.freeParking === 'fixed' && (
+            <input
+              type="number"
+              value={settings.freeParkingAmount || 0}
+              onChange={(e) => updateSetting('freeParkingAmount', parseInt(e.target.value))}
+              className="w-full px-4 py-2 border rounded mt-2"
+              placeholder="Amount"
+            />
+          )}
+        </div>
+        
+        {/* Toggles */}
+        <div className="space-y-3">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={settings.enableAuctions}
+              onChange={(e) => updateSetting('enableAuctions', e.target.checked)}
+            />
+            <span>Enable Auctions</span>
+          </label>
+          
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={settings.enableTrading}
+              onChange={(e) => updateSetting('enableTrading', e.target.checked)}
+            />
+            <span>Enable Trading</span>
+          </label>
+          
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={settings.doubleRentOnUnimprovedMonopoly}
+              onChange={(e) => updateSetting('doubleRentOnUnimprovedMonopoly', e.target.checked)}
+            />
+            <span>Double Rent on Unimproved Monopoly</span>
+          </label>
+          
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={settings.evenBuildingRule}
+              onChange={(e) => updateSetting('evenBuildingRule', e.target.checked)}
+            />
+            <span>Even Building Rule</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## 18. Animations & Visual Effects
+
+### 18.1 Animation Utilities
+```typescript
+// utils/animations.ts
+
+import { Variants } from 'framer-motion';
+
+export const fadeIn: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+export const slideIn: Variants = {
+  hidden: { x: -100, opacity: 0 },
+  visible: { x: 0, opacity: 1 },
+};
+
+export const scaleIn: Variants = {
+  hidden: { scale: 0.8, opacity: 0 },
+  visible: { scale: 1, opacity: 1 },
+};
+
+export const bounceIn: Variants = {
+  hidden: { y: -100, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 20,
+    },
+  },
+};
+
+export const tokenMove = (from: { x: number; y: number }, to: { x: number; y: number }) => ({
+  initial: from,
+  animate: to,
+  transition: {
+    type: 'spring',
+    stiffness: 200,
+    damping: 25,
+    duration: 1,
+  },
+});
+
+export const cardFlip: Variants = {
+  front: { rotateY: 0 },
+  back: { rotateY: 180 },
+};
+
+export const moneyTransfer: Variants = {
+  start: { scale: 1, opacity: 1 },
+  transfer: {
+    scale: [1, 1.5, 0],
+    opacity: [1, 1, 0],
+    transition: { duration: 0.6 },
+  },
+};
+```
+
+### 18.2 Animated Components
+```typescript
+// components/animations/AnimatedMoney.tsx
+
+export const AnimatedMoney: React.FC<{
+  amount: number;
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  onComplete?: () => void;
+}> = ({ amount, from, to, onComplete }) => {
+  return (
+    <motion.div
+      className="animated-money fixed pointer-events-none z-50"
+      initial={{ x: from.x, y: from.y, scale: 1, opacity: 1 }}
+      animate={{
+        x: to.x,
+        y: to.y,
+        scale: [1, 1.2, 0],
+        opacity: [1, 1, 0],
+      }}
+      transition={{ duration: 0.8, ease: 'easeInOut' }}
+      onAnimationComplete={onComplete}
+    >
+      <div className="text-2xl font-bold text-green-600">
+        ${amount}
+      </div>
+    </motion.div>
+  );
+};
+
+// components/animations/DiceRollAnimation.tsx
+
+export const DiceRollAnimation: React.FC<{
+  value: number;
+  onComplete?: () => void;
+}> = ({ value, onComplete }) => {
+  return (
+    <motion.div
+      className="dice-animation"
+      initial={{ rotateX: 0, rotateY: 0 }}
+      animate={{
+        rotateX: [0, 360, 720, 1080],
+        rotateY: [0, 360, 720, 1080],
+      }}
+      transition={{ duration: 1, ease: 'easeOut' }}
+      onAnimationComplete={onComplete}
+    >
+      <Die value={value} />
+    </motion.div>
+  );
+};
+```
+
+---
+
+## 19. Sound & Music
+
+### 19.1 Sound Manager
+```typescript
+// utils/soundManager.ts
+
+class SoundManager {
+  private sounds: Map<string, HTMLAudioElement> = new Map();
+  private music: HTMLAudioElement | null = null;
+  private soundEnabled = true;
+  private musicEnabled = true;
+  private volume = 0.7;
+  
+  loadSound(name: string, url: string): void {
+    const audio = new Audio(url);
+    audio.volume = this.volume;
+    this.sounds.set(name, audio);
+  }
+  
+  playSound(name: string): void {
+    if (!this.soundEnabled) return;
+    
+    const sound = this.sounds.get(name);
+    if (sound) {
+      sound.currentTime = 0;
+      sound.play().catch(console.error);
+    }
+  }
+  
+  playMusic(url: string, loop = true): void {
+    if (!this.musicEnabled) return;
+    
+    if (this.music) {
+      this.music.pause();
+    }
+    
+    this.music = new Audio(url);
+    this.music.loop = loop;
+    this.music.volume = this.volume * 0.3; // Lower volume for background music
+    this.music.play().catch(console.error);
+  }
+  
+  stopMusic(): void {
+    if (this.music) {
+      this.music.pause();
+      this.music = null;
+    }
+  }
+  
+  setVolume(volume: number): void {
+    this.volume = Math.max(0, Math.min(1, volume));
+    this.sounds.forEach(sound => {
+      sound.volume = this.volume;
+    });
+    if (this.music) {
+      this.music.volume = this.volume * 0.3;
+    }
+  }
+  
+  toggleSound(enabled?: boolean): void {
+    this.soundEnabled = enabled ?? !this.soundEnabled;
+  }
+  
+  toggleMusic(enabled?: boolean): void {
+    this.musicEnabled = enabled ?? !this.musicEnabled;
+    if (!this.musicEnabled && this.music) {
+      this.stopMusic();
+    }
+  }
+}
+
+export default new SoundManager();
+```
+
+---
+
+## 20. Save & Load System
+
+### 20.1 Save/Load Service
+```typescript
+// services/SaveLoadService.ts
+
+class SaveLoadService {
+  private readonly STORAGE_KEY = 'monopoly_save';
+  
+  /**
+   * Save game state
+   */
+  saveGame(state: RootState): SaveResult {
+    try {
+      const saveData: SaveData = {
+        version: '1.0.0',
+        timestamp: Date.now(),
+        game: state.game,
+        players: state.players,
+        properties: state.properties,
+        notifications: {
+          history: state.notifications.history,
+        },
+      };
+      
+      const serialized = JSON.stringify(saveData);
+      localStorage.setItem(this.STORAGE_KEY, serialized);
+      
+      return { success: true, savedAt: saveData.timestamp };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+  
+  /**
+   * Load game state
+   */
+  loadGame(): LoadResult {
+    try {
+      const serialized = localStorage.getItem(this.STORAGE_KEY);
+      
+      if (!serialized) {
+        return { success: false, error: 'No saved game found' };
+      }
+      
+      const saveData: SaveData = JSON.parse(serialized);
+      
+      // Validate save data
+      if (!this.validateSaveData(saveData)) {
+        return { success: false, error: 'Invalid save data' };
+      }
+      
+      return {
+        success: true,
+        data: saveData,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+  
+  /**
+   * Export game to file
+   */
+  exportGame(state: RootState): void {
+    const saveData: SaveData = {
+      version: '1.0.0',
+      timestamp: Date.now(),
+      game: state.game,
+      players: state.players,
+      properties: state.properties,
+      notifications: {
+        history: state.notifications.history,
+      },
+    };
+    
+    const blob = new Blob([JSON.stringify(saveData, null, 2)], {
+      type: 'application/json',
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `monopoly-save-${Date.now()}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+  }
+  
+  /**
+   * Import game from file
+   */
+  async importGame(file: File): Promise<LoadResult> {
+    try {
+      const text = await file.text();
+      const saveData: SaveData = JSON.parse(text);
+      
+      if (!this.validateSaveData(saveData)) {
+        return { success: false, error: 'Invalid save file' };
+      }
+      
+      return {
+        success: true,
+        data: saveData,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+  
+  private validateSaveData(data: any): data is SaveData {
+    return (
+      data &&
+      typeof data === 'object' &&
+      'version' in data &&
+      'timestamp' in data &&
+      'game' in data &&
+      'players' in data &&
+      'properties' in data
+    );
+  }
+}
+```
+
+---
+
+## 21. Statistics & Analytics
+
+### 21.1 Stats Service
+```typescript
+// services/StatsService.ts
+
+class StatsService {
+  /**
+   * Calculate game statistics
+   */
+  calculateGameStats(state: RootState): GameStatistics {
+    const players = playersSelectors.selectAll(state);
+    const activePlayers = players.filter(p => !p.isBankrupt);
+    
+    return {
+      gameDuration: Date.now() - (state.game.createdAt || 0),
+      totalTurns: state.game.turn,
+      totalRounds: state.game.round,
+      
+      playerStats: players.map(player => ({
+        playerId: player.id,
+        playerName: player.name,
+        finalPosition: this.calculateFinalPosition(player, state),
+        netWorth: this.calculateNetWorth(player.id, state),
+        ...player.stats,
+      })),
+      
+      propertyStats: {
+        totalPropertiesOwned: propertiesSelectors
+          .selectAll(state)
+          .filter(p => p.ownerId).length,
+        totalMonopolies: this.countTotalMonopolies(state),
+        totalBuildings: this.countTotalBuildings(state),
+      },
+      
+      economicStats: {
+        totalMoneyInCirculation: players.reduce((sum, p) => sum + p.cash, 0),
+        totalPropertyValue: this.calculateTotalPropertyValue(state),
+        averageNetWorth: players.reduce((sum, p) => 
+          sum + this.calculateNetWorth(p.id, state), 0) / players.length,
+      },
+    };
+  }
+  
+  /**
+   * Generate game report
+   */
+  generateGameReport(state: RootState): GameReport {
+    const stats = this.calculateGameStats(state);
+    const winner = state.game.winnerId 
+      ? state.players.entities[state.game.winnerId]
+      : null;
+    
+    return {
+      summary: {
+        winner: winner?.name || 'N/A',
+        duration: this.formatDuration(stats.gameDuration),
+        totalTurns: stats.totalTurns,
+        totalRounds: stats.totalRounds,
+      },
+      
+      playerRankings: stats.playerStats
+        .sort((a, b) => b.netWorth - a.netWorth)
+        .map((p, index) => ({
+          rank: index + 1,
+          playerName: p.playerName,
+          netWorth: p.netWorth,
+          propertiesOwned: p.propertiesPurchased,
+          totalRentCollected: p.totalRentCollected,
+        })),
+      
+      highlights: this.generateHighlights(stats),
+    };
+  }
+  
+  private generateHighlights(stats: GameStatistics): string[] {
+    const highlights: string[] = [];
+    
+    // Richest player
+    const richest = stats.playerStats.reduce((max, p) => 
+      p.netWorth > max.netWorth ? p : max
+    );
+    highlights.push(`${richest.playerName} was the richest with $${richest.netWorth}`);
+    
+    // Most properties
+    const mostProperties = stats.playerStats.reduce((max, p) =>
+      p.propertiesPurchased > max.propertiesPurchased ? p : max
+    );
+    highlights.push(`${mostProperties.playerName} owned the most properties (${mostProperties.propertiesPurchased})`);
+    
+    // Most rent collected
+    const mostRent = stats.playerStats.reduce((max, p) =>
+      p.totalRentCollected > max.totalRentCollected ? p : max
+    );
+    highlights.push(`${mostRent.playerName} collected the most rent ($${mostRent.totalRentCollected})`);
+    
+    return highlights;
+  }
+}
+```
+
+---
+
+## 22. Tutorial & Help System
+
+### 22.1 Tutorial Component
+```typescript
+// components/tutorial/Tutorial.tsx
+
+export const Tutorial: React.FC = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  
+  const steps: TutorialStep[] = [
+    {
+      title: 'Welcome to Monopoly',
+      content: 'Let\'s learn how to play!',
+      target: null,
+    },
+    {
+      title: 'Rolling the Dice',
+      content: 'Click here to roll the dice and move your token',
+      target: '.dice-roller',
+    },
+    {
+      title: 'Buying Properties',
+      content: 'When you land on an unowned property, you can buy it',
+      target: '.property-card',
+    },
+    // ... more steps
+  ];
+  
+  return (
+    <Joyride
+      steps={steps.map(step => ({
+        target: step.target || 'body',
+        content: (
+          <div>
+            <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+            <p>{step.content}</p>
+          </div>
+        ),
+        disableBeacon: true,
+      }))}
+      run={isActive}
+      stepIndex={currentStep}
+      continuous
+      showProgress
+      showSkipButton
+      styles={{
+        options: {
+          primaryColor: '#3b82f6',
+        },
+      }}
+    />
+  );
+};
+```
+
+---
+
+## 23. Testing Strategy
+
+### 23.1 Unit Tests
+```typescript
+// tests/unit/gameEngine.test.ts
+
+describe('GameEngine', () => {
+  let engine: GameEngine;
+  let store: Store;
+  
+  beforeEach(() => {
+    store = configureStore({ reducer: rootReducer });
+    engine = new GameEngine(store);
+  });
+  
+  describe('rollDice', () => {
+    it('should generate valid dice values', () => {
+      const roll = engine.rollDice('player1');
+      expect(roll.dice1).toBeGreaterThanOrEqual(1);
+      expect(roll.dice1).toBeLessThanOrEqual(6);
+      expect(roll.dice2).toBeGreaterThanOrEqual(1);
+      expect(roll.dice2).toBeLessThanOrEqual(6);
+    });
+    
+    it('should detect doubles', () => {
+      // Mock Math.random for deterministic test
+      jest.spyOn(Math, 'random').mockReturnValue(0.5);
+      const roll = engine.rollDice('player1');
+      expect(roll.isDoubles).toBe(roll.dice1 === roll.dice2);
+    });
+  });
+  
+  describe('buyProperty', () => {
+    it('should allow buying unowned property', () => {
+      const result = engine.buyProperty('player1', 'property1');
+      expect(result.success).toBe(true);
+    });
+    
+    it('should prevent buying owned property', () => {
+      engine.buyProperty('player1', 'property1');
+      const result = engine.buyProperty('player2', 'property1');
+      expect(result.success).toBe(false);
+    });
+  });
+});
+```
+
+### 23.2 Integration Tests
+```typescript
+// tests/integration/gameplay.test.ts
+
+describe('Full Game Flow', () => {
+  it('should complete a full turn cycle', async () => {
+    // Initialize game
+    const game = await setupTestGame();
+    
+    // Roll dice
+    await game.rollDice('player1');
+    
+    // Move player
+    expect(game.getCurrentPlayer().position).toBeGreaterThan(0);
+    
+    // Handle landing
+    // ...
+    
+    // End turn
+    await game.endTurn();
+    
+    // Verify next player
+    expect(game.getCurrentPlayer().id).toBe('player2');
+  });
+});
+```
+
+### 23.3 E2E Tests
+```typescript
+// tests/e2e/game.spec.ts
+
+describe('Monopoly Game E2E', () => {
+  it('should allow playing a complete game', () => {
+    cy.visit('/');
+    
+    // Start new game
+    cy.get('[data-testid="new-game"]').click();
+    
+    // Add players
+    cy.get('[data-testid="add-player"]').click();
+    cy.get('[data-testid="player-name"]').type('Player 1');
+    cy.get('[data-testid="confirm-player"]').click();
+    
+    // Start game
+    cy.get('[data-testid="start-game"]').click();
+    
+    // Roll dice
+    cy.get('[data-testid="roll-dice"]').click();
+    
+    // Verify player moved
+    cy.get('[data-testid="player-position"]').should('not.equal', '0');
+  });
+});
+```
+
+---
+
+## 24. Performance Optimization
+
+### 24.1 Optimization Strategies
+```typescript
+// Performance optimizations
+
+// 1. Memoize expensive selectors
+export const selectExpensiveData = createSelector(
+  [selectBaseData],
+  (baseData) => {
+    // Expensive computation
+    return processData(baseData);
+  }
+);
+
+// 2. Use React.memo for expensive components
+export const PlayerCard = React.memo<PlayerCardProps>(({ player }) => {
+  // Component implementation
+}, (prevProps, nextProps) => {
+  // Custom comparison
+  return prevProps.player.id === nextProps.player.id &&
+         prevProps.player.cash === nextProps.player.cash;
+});
+
+// 3. Virtualize long lists
+import { FixedSizeList } from 'react-window';
+
+export const PropertyList: React.FC = () => {
+  const properties = useSelector(selectAllProperties);
+  
+  return (
+    <FixedSizeList
+      height={600}
+      itemCount={properties.length}
+      itemSize={80}
+      width="100%"
+    >
+      {({ index, style }) => (
+        <div style={style}>
+          <PropertyCard property={properties[index]} />
+        </div>
+      )}
+    </FixedSizeList>
+  );
+};
+
+// 4. Debounce expensive operations
+import { debounce } from 'lodash';
+
+const debouncedUpdate = debounce((value) => {
+  dispatch(updateValue(value));
+}, 300);
+
+// 5. Code splitting
+const TradeModal = lazy(() => import('./components/modals/TradeModal'));
+const BuildingModal = lazy(() => import('./components/modals/BuildingModal'));
+```
+
+---
+
+## 25. Deployment & CI/CD
+
+### 25.1 Next.js Configuration
+```javascript
+// next.config.js
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  
+  images: {
+    domains: ['your-cdn.com'],
+  },
+  
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_SOCKET_URL: process.env.NEXT_PUBLIC_SOCKET_URL,
+  },
+  
+  // PWA configuration
+  pwa: {
+    dest: 'public',
+    register: true,
+    skipWaiting: true,
+  },
+};
+
+module.exports = nextConfig;
+```
+
+### 25.2 GitHub Actions CI/CD
+```yaml
+# .github/workflows/deploy.yml
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: vercel/action@v2
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.ORG_ID }}
+          vercel-project-id: ${{ secrets.PROJECT_ID }}
+```
+
+---
+
+## Summary Checklist
+
+### Core Features
+- [x] 1. Project Setup & Architecture
+- [x] 2. Core Game Logic & State Management
+- [x] 3. Board & UI Components
+- [x] 4. Player Management
+- [x] 5. Property System
+- [x] 6. Trading System
+- [x] 7. Building System
+- [x] 8. Dice & Movement
+- [x] 9. Jail System
+- [x] 10. Cards System
+- [x] 11. Banking & Financial Transactions
+- [x] 12. Auction System
+- [x] 13. Bankruptcy & Elimination
+
+### Advanced Features
+- [x] 14. Bot/AI Players
+- [x] 15. Notification & History System
+- [x] 16. Multiplayer & Networking
+- [x] 17. Game Settings & Customization
+- [x] 18. Animations & Visual Effects
+- [x] 19. Sound & Music
+
+### System Features
+- [x] 20. Save & Load System
+- [x] 21. Statistics & Analytics
+- [x] 22. Tutorial & Help System
+
+### Quality & Deployment
+- [x] 23. Testing Strategy
+- [x] 24. Performance Optimization
+- [x] 25. Deployment & CI/CD
+
+This comprehensive plan covers all aspects needed to build a fully functional Monopoly game with TypeScript, React, Next.js, and Redux!

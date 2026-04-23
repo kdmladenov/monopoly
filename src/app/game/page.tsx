@@ -19,6 +19,12 @@ import AuctionDialog from '@/components/game/Modals/AuctionDialog';
 import { useDispatch } from 'react-redux';
 import { executeTrade, addActivityLog, resetGame } from '@/lib/features/game/gameSlice';
 import { canRoll, canEndTurn } from '@/lib/turns/turnController';
+import { NotificationContainer } from '@/components/notifications/NotificationContainer';
+import { HistoryLog } from '@/components/notifications/HistoryLog';
+import { NotificationPanel } from '@/components/notifications/NotificationPanel';
+import { HistoryList } from '@/components/notifications/HistoryList';
+import HistoryIcon from '@mui/icons-material/History';
+import { toggleHistoryLog } from '@/lib/features/notifications/notificationsSlice';
 
 const TooltipChild = forwardRef<HTMLSpanElement, any>((props, ref) => {
   const { interactive, ...other } = props;
@@ -243,6 +249,13 @@ export default function GamePage() {
               onUnmortgageProperty={handleUnmortgageProperty}
             />
 
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" sx={{ color: '#fbbf24', fontWeight: 900, mb: 2, fontSize: '1rem', borderBottom: '1px solid rgba(251, 191, 36, 0.2)', pb: 1 }}>
+                RECENT EVENTS
+              </Typography>
+              <HistoryList compact maxEntries={5} />
+            </Box>
+
             <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
               <Button
                 fullWidth
@@ -414,6 +427,11 @@ export default function GamePage() {
           playerMoney={currentPlayer?.money ?? 0}
           fineAmount={1000}
         />
+
+        {/* Notification and History Overlay Components */}
+        <NotificationContainer />
+        <HistoryLog />
+        <NotificationPanel />
       </Box>
     </Box>
   );
