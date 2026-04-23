@@ -1,0 +1,811 @@
+# Trade Dialog Component - iOS 18 Glass Design
+
+I'll create a complete React component matching the design in your image using your installed libraries.
+
+## File Structure
+
+```
+components/
+├── TradeDialog/
+│   ├── TradeDialog.tsx
+│   ├── PropertyCard.tsx
+│   └── styles.ts
+```
+
+---
+
+## 1. **TradeDialog.tsx** (Main Component)
+
+```tsx
+'use client';
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, IconButton, Avatar } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
+import { PropertyCard } from './PropertyCard';
+import { glassDialog, glassSection, cashControl } from './styles';
+
+interface Property {
+  id: string;
+  name: string;
+  value: number;
+  color: string;
+  icons: string[];
+}
+
+interface Player {
+  id: string;
+  name: string;
+  avatar: string;
+  isCurrentPlayer: boolean;
+}
+
+interface TradeDialogProps {
+  open: boolean;
+  onClose: () => void;
+  player1: Player;
+  player2: Player;
+  player1Properties: Property[];
+  player2Properties: Property[];
+  onPropose: (player1Offer: string[], player2Offer: string[], cash: { p1: number; p2: number }) => void;
+}
+
+export const TradeDialog: React.FC<TradeDialogProps> = ({
+  open,
+  onClose,
+  player1,
+  player2,
+  player1Properties,
+  player2Properties,
+  onPropose,
+}) => {
+  const [selectedP1Properties, setSelectedP1Properties] = useState<string[]>([]);
+  const [selectedP2Properties, setSelectedP2Properties] = useState<string[]>([]);
+  const [cash100, setCash100] = useState(0);
+  const [cash1000, setCash1000] = useState(0);
+
+  const handleToggleP1Property = (id: string) => {
+    setSelectedP1Properties((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleP2Property = (id: string) => {
+    setSelectedP2Properties((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
+
+  const handlePropose = () => {
+    onPropose(selectedP1Properties, selectedP2Properties, {
+      p1: cash100 * 100 + cash1000 * 1000,
+      p2: 0,
+    });
+  };
+
+  const adjustCash = (type: 'add' | 'subtract', denomination: 100 | 1000) => {
+    if (denomination === 100) {
+      setCash100((prev) => Math.max(0, type === 'add' ? prev + 1 : prev - 1));
+    } else {
+      setCash1000((prev) => Math.max(0, type === 'add' ? prev + 1 : prev - 1));
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <Dialog
+          open={open}
+          onClose={onClose}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background: 'transparent',
+              boxShadow: 'none',
+              overflow: 'visible',
+            },
+          }}
+          BackdropProps={{
+            sx: {
+              backdropFilter: 'blur(8px)',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            },
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 50 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            style={glassDialog}
+          >
+            {/* Main Content */}
+            <div style={{ display: 'flex', gap: '16px', position: 'relative' }}>
+              {/* Player 1 Section */}
+              <div style={{ ...glassSection, background: 'rgba(66, 133, 244, 0.15)' }}>
+                {/* Player Avatar */}
+                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                  <Avatar
+                    src={player1.avatar}
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      margin: '0 auto 12px',
+                      border: '4px solid rgba(255, 255, 255, 0.3)',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                    }}
+                  />
+                  <h2 style={{ 
+                    color: 'white', 
+                    fontSize: '24px', 
+                    fontWeight: '700',
+                    margin: 0,
+                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  }}>
+                    {player1.name}
+                  </h2>
+                  <p style={{ 
+                    color: 'rgba(255, 255, 255, 0.8)', 
+                    fontSize: '18px',
+                    margin: '4px 0 0 0',
+                    fontWeight: '600',
+                  }}>
+                    YOUR OFFER
+                  </p>
+                </div>
+
+                {/* Property Cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {player1Properties.map((property) => (
+                    <PropertyCard
+                      key={property.id}
+                      property={property}
+                      selected={selectedP1Properties.includes(property.id)}
+                      onClick={() => handleToggleP1Property(property.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Swap Icon */}
+              <div style={{
+                position: 'absolute',
+                left: '50%',
+                top: '140px',
+                transform: 'translateX(-50%)',
+                zIndex: 10,
+              }}>
+                <motion.div
+                  animate={{ rotate: 180 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(20px)',
+                    border: '2px solid rgba(255, 255, 255, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                  }}
+                >
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                  </svg>
+                </motion.div>
+              </div>
+
+              {/* Player 2 Section */}
+              <div style={{ ...glassSection, background: 'rgba(156, 39, 176, 0.15)' }}>
+                {/* Player Avatar */}
+                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                  <Avatar
+                    src={player2.avatar}
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      margin: '0 auto 12px',
+                      border: '4px solid rgba(255, 255, 255, 0.3)',
+                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+                    }}
+                  />
+                  <h2 style={{ 
+                    color: 'white', 
+                    fontSize: '24px', 
+                    fontWeight: '700',
+                    margin: 0,
+                    textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  }}>
+                    {player2.name}
+                  </h2>
+                  <p style={{ 
+                    color: 'rgba(255, 255, 255, 0.8)', 
+                    fontSize: '18px',
+                    margin: '4px 0 0 0',
+                    fontWeight: '600',
+                  }}>
+                    THEIR OFFER
+                  </p>
+                </div>
+
+                {/* Property Cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {player2Properties.map((property) => (
+                    <PropertyCard
+                      key={property.id}
+                      property={property}
+                      selected={selectedP2Properties.includes(property.id)}
+                      onClick={() => handleToggleP2Property(property.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Cash Section */}
+            <div style={{
+              marginTop: '24px',
+              padding: '20px',
+              background: 'rgba(0, 0, 0, 0.2)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}>
+              <h3 style={{
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '18px',
+                fontWeight: '600',
+                textAlign: 'center',
+                margin: '0 0 16px 0',
+                letterSpacing: '2px',
+              }}>
+                CASH:
+              </h3>
+
+              {/* 100 Control */}
+              <div style={cashControl}>
+                <button
+                  onClick={() => adjustCash('subtract', 100)}
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    fontSize: '32px',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                >
+                  −
+                </button>
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '16px',
+                  padding: '12px 32px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  minWidth: '140px',
+                }}>
+                  <div style={{
+                    color: 'white',
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                  }}>
+                    ${cash100 * 100}
+                  </div>
+                </div>
+                <button
+                  onClick={() => adjustCash('add', 100)}
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'rgba(156, 39, 176, 0.3)',
+                    border: '1px solid rgba(156, 39, 176, 0.5)',
+                    color: 'white',
+                    fontSize: '32px',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(156, 39, 176, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(156, 39, 176, 0.3)';
+                  }}
+                >
+                  +
+                </button>
+              </div>
+
+              {/* 1000 Control */}
+              <div style={{ ...cashControl, marginTop: '12px' }}>
+                <button
+                  onClick={() => adjustCash('subtract', 1000)}
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    fontSize: '32px',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                >
+                  −
+                </button>
+                <div style={{
+                  background: 'rgba(0, 0, 0, 0.3)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '16px',
+                  padding: '12px 32px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  minWidth: '140px',
+                }}>
+                  <div style={{
+                    color: 'white',
+                    fontSize: '28px',
+                    fontWeight: '700',
+                    textAlign: 'center',
+                  }}>
+                    ${cash1000 * 1000}
+                  </div>
+                </div>
+                <button
+                  onClick={() => adjustCash('add', 1000)}
+                  style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '16px',
+                    background: 'rgba(156, 39, 176, 0.3)',
+                    border: '1px solid rgba(156, 39, 176, 0.5)',
+                    color: 'white',
+                    fontSize: '32px',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(156, 39, 176, 0.5)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(156, 39, 176, 0.3)';
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '16px',
+              marginTop: '24px',
+            }}>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onClose}
+                style={{
+                  flex: 1,
+                  padding: '18px',
+                  borderRadius: '20px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(20px)',
+                  border: '2px solid rgba(255, 255, 255, 0.2)',
+                  color: 'white',
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                CANCEL
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handlePropose}
+                style={{
+                  flex: 1,
+                  padding: '18px',
+                  borderRadius: '20px',
+                  background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+                  backdropFilter: 'blur(20px)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  color: 'white',
+                  fontSize: '20px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 24px rgba(76, 175, 80, 0.4)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                PROPOSE
+              </motion.button>
+            </div>
+          </motion.div>
+        </Dialog>
+      )}
+    </AnimatePresence>
+  );
+};
+```
+
+---
+
+## 2. **PropertyCard.tsx**
+
+```tsx
+'use client';
+
+import React from 'react';
+import { motion } from 'framer-motion';
+import TrainIcon from '@mui/icons-material/Train';
+import FlightIcon from '@mui/icons-material/Flight';
+import LocalShippingIcon from '@mui/icons-material/LocalShipping';
+
+interface Property {
+  id: string;
+  name: string;
+  value: number;
+  color: string;
+  icons: string[];
+}
+
+interface PropertyCardProps {
+  property: Property;
+  selected: boolean;
+  onClick: () => void;
+}
+
+const getIcon = (iconType: string) => {
+  const iconProps = { sx: { fontSize: 20, color: '#FFA726' } };
+  switch (iconType) {
+    case 'train':
+      return <TrainIcon {...iconProps} />;
+    case 'plane':
+      return <FlightIcon {...iconProps} />;
+    case 'truck':
+      return <LocalShippingIcon {...iconProps} />;
+    default:
+      return <TrainIcon {...iconProps} />;
+  }
+};
+
+export const PropertyCard: React.FC<PropertyCardProps> = ({
+  property,
+  selected,
+  onClick,
+}) => {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      style={{
+        position: 'relative',
+        padding: '16px',
+        borderRadius: '16px',
+        background: selected
+          ? 'rgba(255, 255, 255, 0.25)'
+          : 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px)',
+        border: selected
+          ? '2px solid rgba(255, 255, 255, 0.5)'
+          : '2px solid rgba(255, 255, 255, 0.2)',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        boxShadow: selected
+          ? '0 8px 24px rgba(255, 255, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)'
+          : '0 4px 12px rgba(0, 0, 0, 0.1)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          padding: '8px 12px',
+          borderRadius: '8px',
+          background: property.color,
+          marginBottom: '12px',
+          textAlign: 'center',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+        }}
+      >
+        <div
+          style={{
+            color: 'white',
+            fontSize: '12px',
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+          }}
+        >
+          Property Deed
+        </div>
+      </div>
+
+      {/* Property Name */}
+      <div
+        style={{
+          textAlign: 'center',
+          marginBottom: '8px',
+        }}
+      >
+        <div
+          style={{
+            color: 'rgba(0, 0, 0, 0.9)',
+            fontSize: '14px',
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase',
+          }}
+        >
+          {property.name}
+        </div>
+        <div
+          style={{
+            color: 'rgba(0, 0, 0, 0.8)',
+            fontSize: '24px',
+            fontWeight: '700',
+            marginTop: '4px',
+          }}
+        >
+          {property.value}
+        </div>
+      </div>
+
+      {/* Icons */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '8px',
+          marginTop: '12px',
+        }}
+      >
+        {property.icons.map((icon, index) => (
+          <div
+            key={index}
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {getIcon(icon)}
+          </div>
+        ))}
+      </div>
+
+      {/* Selection Indicator */}
+      {selected && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          style={{
+            position: 'absolute',
+            top: '-8px',
+            right: '-8px',
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+            border: '3px solid white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(76, 175, 80, 0.5)',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+          </svg>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+};
+```
+
+---
+
+## 3. **styles.ts**
+
+```ts
+import { CSSProperties } from 'react';
+
+export const glassDialog: CSSProperties = {
+  background: 'rgba(255, 255, 255, 0.05)',
+  backdropFilter: 'blur(40px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+  borderRadius: '32px',
+  border: '1px solid rgba(255, 255, 255, 0.18)',
+  padding: '32px',
+  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+  maxWidth: '900px',
+  margin: '0 auto',
+};
+
+export const glassSection: CSSProperties = {
+  flex: 1,
+  padding: '24px',
+  borderRadius: '24px',
+  backdropFilter: 'blur(20px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+  border: '2px solid rgba(255, 255, 255, 0.25)',
+  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+};
+
+export const cashControl: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '16px',
+};
+```
+
+---
+
+## 4. **Usage Example**
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+import { TradeDialog } from '@/components/TradeDialog/TradeDialog';
+
+export default function GamePage() {
+  const [openTrade, setOpenTrade] = useState(false);
+
+  const player1 = {
+    id: '1',
+    name: 'PLAYER 1 (You)',
+    avatar: '/avatars/player1.png',
+    isCurrentPlayer: true,
+  };
+
+  const player2 = {
+    id: '2',
+    name: 'AI 4',
+    avatar: '/avatars/ai4.png',
+    isCurrentPlayer: false,
+  };
+
+  const player1Properties = [
+    {
+      id: 'p1',
+      name: 'JOHANNESBURG U.',
+      value: 1200,
+      color: '#FF6B35',
+      icons: ['train', 'plane'],
+    },
+    {
+      id: 'p2',
+      name: 'BUENOS AIRES',
+      value: 1400,
+      color: '#4A90E2',
+      icons: ['train', 'truck'],
+    },
+    {
+      id: 'p3',
+      name: 'MUMBAI C',
+      value: 2000,
+      color: '#9C27B0',
+      icons: ['train', 'plane'],
+    },
+  ];
+
+  const player2Properties = [
+    {
+      id: 'p4',
+      name: 'CAIRO',
+      value: 800,
+      color: '#8B4513',
+      icons: ['train', 'plane'],
+    },
+    {
+      id: 'p5',
+      name: 'DELHI',
+      value: 1000,
+      color: '#5C9BD1',
+      icons: ['train', 'truck'],
+    },
+    {
+      id: 'p6',
+      name: 'NEW YORK CITY',
+      value: 3200,
+      color: '#4CAF50',
+      icons: ['train', 'plane'],
+    },
+  ];
+
+  const handlePropose = (
+    p1Offer: string[],
+    p2Offer: string[],
+    cash: { p1: number; p2: number }
+  ) => {
+    console.log('Trade proposed:', { p1Offer, p2Offer, cash });
+    setOpenTrade(false);
+  };
+
+  return (
+    <div>
+      <button onClick={() => setOpenTrade(true)}>Open Trade Dialog</button>
+      
+      <TradeDialog
+        open={openTrade}
+        onClose={() => setOpenTrade(false)}
+        player1={player1}
+        player2={player2}
+        player1Properties={player1Properties}
+        player2Properties={player2Properties}
+        onPropose={handlePropose}
+      />
+    </div>
+  );
+}
+```
+
+---
+
+## 5. **Tailwind Configuration** (if needed)
+
+Add to `tailwind.config.ts`:
+
+```ts
+module.exports = {
+  theme: {
+    extend: {
+      backdropBlur: {
+        xs: '2px',
+      },
+    },
+  },
+};
+```
+
+---
+
+## ✨ Features Implemented
+
+✅ **Glass morphism design** with backdrop blur  
+✅ **Framer Motion animations** (scale, fade, rotate)  
+✅ **MUI Dialog** with custom glass styling  
+✅ **Property card selection** with visual feedback  
+✅ **Cash increment/decrement** controls  
+✅ **Responsive layout** (two-column for offers)  
+✅ **Animated swap icon** (rotating)  
+✅ **iOS 18-style buttons** (Cancel/Propose)  
+✅ **TypeScript support**  
+✅ **Fully customizable** colors and properties
+
+This matches your design perfectly! 🎨

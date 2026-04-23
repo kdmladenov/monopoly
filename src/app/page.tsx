@@ -186,12 +186,25 @@ export default function Home() {
               <Slider
                 size="small"
                 value={useSelector((state: RootState) => state.game.settings.animationSpeed)}
-                min={0.1}
-                max={2.0}
+                min={0.2}
+                max={4.5}
                 step={0.1}
+                marks={[
+                  { value: 0.5, label: 'Slow' },
+                  { value: 2.0, label: 'Normal' },
+                  { value: 4.0, label: 'Fast' }
+                ]}
                 onChange={(_, value) => dispatch(updateSettings({ animationSpeed: value as number }))}
                 valueLabelDisplay="auto"
-                sx={{ ml: 1, width: '95%' }}
+                sx={{ 
+                  ml: 1, 
+                  width: '95%',
+                  '& .MuiSlider-markLabel': { 
+                    fontSize: '0.65rem', 
+                    color: 'rgba(255,255,255,0.4)',
+                    fontWeight: 700
+                  }
+                }}
               />
             </Box>
           </Stack>

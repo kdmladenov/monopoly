@@ -113,7 +113,7 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
         width: '100%',
         display: 'flex',
         flexDirection,
-        bgcolor: ownerColor ? `${ownerColor}40` : '#c6e6d5', 
+        bgcolor: ownerColor ? `${ownerColor}59` : '#c6e6d5', // 59 is approx 35% opacity
         border: '0.5px solid black',
         borderRadius: 0,
         overflow: 'hidden',
@@ -143,9 +143,10 @@ export default function BoardSquareView({ square, ownerColor }: Props) {
         display: 'flex', 
         flexDirection: 'column', 
         justifyContent: 'space-between', 
+        minWidth: 0,
+        position: 'relative',
         alignItems: 'center',
-        textAlign: 'center',
-        minWidth: 0
+        textAlign: 'center'
       }}>
         <Typography 
           sx={{ 

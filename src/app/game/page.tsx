@@ -181,8 +181,9 @@ export default function GamePage() {
             onRollDice={handleRoll}
             onEndTurn={handleEndTurn}
             onShowInfo={() => setIsOverviewOpen(true)}
-            canRoll={canRoll(game.turnPhase, game.phase)}
-            canEndTurn={canEndTurn(game.turnPhase)}
+            canRoll={canRoll(game.turnPhase, game.phase) && game.players[game.currentPlayerIndex].type === PlayerType.HUMAN}
+            canEndTurn={canEndTurn(game.turnPhase) && game.players[game.currentPlayerIndex].type === PlayerType.HUMAN}
+            activeTradePlayerIds={tradeData.open && tradeData.proposer && tradeData.target ? [tradeData.proposer.id, tradeData.target.id] : undefined}
           />
         </Box>
 

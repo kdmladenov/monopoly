@@ -185,6 +185,9 @@ const gameSlice = createSlice({
         player.money += state.settings.passingStartBonus;
       }
 
+      state.turnPhase = TurnPhase.MOVE;
+    },
+    landOnSquare(state) {
       state.turnPhase = TurnPhase.ACTION;
     },
     purchaseProperty(
@@ -471,6 +474,7 @@ export const {
   rollDice,
   decrementJailTurn,
   movePlayer,
+  landOnSquare,
   purchaseProperty,
   payRent,
   buildHouse,

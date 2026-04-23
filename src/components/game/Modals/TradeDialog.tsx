@@ -4,15 +4,20 @@ import {
   Dialog,
   Box,
   Typography,
-  Button,
+  IconButton,
+  Avatar,
   Stack,
-  Paper,
+  Button
 } from "@mui/material";
-import { BoardSquare, Player } from "@/lib/game.types";
-import { useMemo, useState } from "react";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import { BoardSquare, Player, PlayerType } from "@/lib/game.types";
+import { useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import SyncIcon from "@mui/icons-material/Sync";
 import PersonIcon from "@mui/icons-material/Person";
 import PetsIcon from "@mui/icons-material/Pets";
+import TrainIcon from "@mui/icons-material/Train";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
 
 interface Props {
   open: boolean;
@@ -22,7 +27,7 @@ interface Props {
   board: BoardSquare[];
   proposerProperties: string[];
   targetProperties: string[];
-  balance: number; // Positive: Proposer pays Target. Negative: Target pays Proposer.
+  balance: number; 
   onToggleProperty: (id: string, isProposer: boolean) => void;
   onUpdateBalance: (delta: number) => void;
   onConfirmDeal: () => Promise<{ accepted: boolean }>;
@@ -41,78 +46,56 @@ export default function TradeDialog({
   onUpdateBalance,
   onConfirmDeal
 }: Props) {
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const handleToggle = (id: string, isProposer: boolean) => {
-    setStatusMessage(null);
-    onToggleProperty(id, isProposer);
-  };
+  const proposerTradeItems = useMemo(() => 
+    board.filter(s => {
+      const id = s.property?.id || s.transportation?.name || "";
+      return proposerProperties.includes(id);
+    })
+  , [proposerProperties, board]);
 
-  const handleUpdateBalance = (delta: number) => {
-    setStatusMessage(null);
-    onUpdateBalance(delta);
-  };
-
-  const proposerOwned = useMemo(() => 
-    board.filter(s => (s.property?.ownerId === proposer.id || s.transportation?.ownerId === proposer.id))
-  , [proposer, board]);
-
-  const targetOwned = useMemo(() => 
-    board.filter(s => (s.property?.ownerId === target.id || s.transportation?.ownerId === target.id))
-  , [target, board]);
-
-  const handlePropose = async () => {
-    const result = await onConfirmDeal();
-    if (result.accepted) {
-      setStatusMessage("DEAL ACCEPTED");
-      // Optionally close after a delay? Rule says "footer should have message... and not closed automatically"
-    } else {
-      setStatusMessage("DEAL REJECTED");
-    }
-  };
+  const targetTradeItems = useMemo(() => 
+    board.filter(s => {
+      const id = s.property?.id || s.transportation?.name || "";
+      return targetProperties.includes(id);
+    })
+  , [targetProperties, board]);
 
   const renderPropertyTile = (s: BoardSquare, isProposer: boolean) => {
     const id = s.property?.id || s.transportation?.name || "";
-    const name = s.property?.name || s.transportation?.name || "";
+    const name = s.property?.name || s.transportation?.name || "PROPERTY";
     const price = s.property?.price || s.transportation?.price || 0;
-    const color = s.property?.color || "#333";
-    const selected = isProposer ? proposerProperties.includes(id) : targetProperties.includes(id);
-    const hasHouses = (s.property?.houses || 0) > 0;
+    const color = s.property ? (s.property.color || "#333") : "#475569";
 
     return (
       <Box
         key={id}
-        onClick={() => !hasHouses && handleToggle(id, isProposer)}
+        onClick={() => onToggleProperty(id, isProposer)}
         sx={{
-          width: "45%",
-          aspectRatio: "1/1",
-          bgcolor: color,
-          color: "white",
-          borderRadius: 2,
+          bgcolor: "white",
+          borderRadius: "12px",
+          width: "82px",
+          height: "80px",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          p: 1,
-          cursor: hasHouses ? "not-allowed" : "pointer",
-          border: selected ? "4px solid #fff" : "2px solid #000",
-          boxShadow: selected ? 4 : 0,
-          opacity: hasHouses ? 0.6 : 1,
-          position: "relative"
+          p: "4px",
+          cursor: "pointer",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": { transform: "scale(1.05)", boxShadow: "0 6px 15px rgba(0,0,0,0.2)" }
         }}
       >
-        <Typography variant="caption" sx={{ fontWeight: 900, lineHeight: 1.1, fontSize: "0.7rem", mb: 0.5 }}>
-          {name.toUpperCase()}
-        </Typography>
-        <Typography variant="caption" sx={{ fontWeight: 700 }}>
-          {price}
-        </Typography>
-        {(s.property?.isMortgaged || s.transportation?.isMortgaged) && (
-          <Box sx={{ position: "absolute", top: "40%", left: "10%", bgcolor: "red", color: "white", p: 0.2, fontWeight: 900, fontSize: "0.5rem", border: "1px solid white", transform: "rotate(-15deg)" }}>
-            MORTGAGED
-          </Box>
-        )}
+        <Box sx={{ flex: 1, bgcolor: color, borderTopLeftRadius: "8px", borderTopRightRadius: "8px", borderBottomLeftRadius: 0, borderBottomRightRadius: 0, p: "4px 2px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Typography sx={{ color: color === "white" || color === "yellow" || color === "lightBlue" ? "black" : "white", fontSize: "10px", fontWeight: 800, textAlign: "center", lineHeight: 1.1 }}>
+            {name}
+          </Typography>
+        </Box>
+        
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Typography sx={{ color: "black", fontSize: "18px", fontWeight: 900 }}>
+            {price}
+          </Typography>
+        </Box>
       </Box>
     );
   };
@@ -120,137 +103,237 @@ export default function TradeDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
-      maxWidth="md"
+      onClose={(event, reason) => {
+        if (reason === "backdropClick") return;
+        onClose();
+      }}
+      maxWidth="sm"
       fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: 4,
-            bgcolor: "#000",
-            color: "white",
-            p: 3,
-            border: "3px solid #333"
-          }
+      hideBackdrop
+      sx={{
+        pointerEvents: "none",
+        '& .MuiDialog-paper': {
+          pointerEvents: "auto",
+          background: 'transparent',
+          backgroundImage: 'none',
+          boxShadow: 'none',
+          border: 'none',
+          outline: 'none',
+          overflow: 'visible',
+          margin: 1,
+          mt: 4
         }
       }}
     >
-      <Box sx={{ display: "flex", gap: 3 }}>
-        <Box sx={{ flexGrow: 1 }}>
-          {/* Header */}
-          <Box sx={{ display: "flex", justifyContent: "space-around", alignItems: "center", mb: 3 }}>
-            <Box sx={{ textAlign: "center" }}>
-              <Paper sx={{ p: 1, bgcolor: proposer.color, borderRadius: 2, border: "3px solid #fff" }}>
-                <PersonIcon sx={{ fontSize: 60, color: "white" }} />
-              </Paper>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>{proposer.name}</Typography>
-            </Box>
-            <SwapHorizIcon sx={{ fontSize: 40, color: "#9ca3af" }} />
-            <Box sx={{ textAlign: "center" }}>
-              <Paper sx={{ p: 1, bgcolor: target.color, borderRadius: 2, border: "3px solid #fff" }}>
-                <PetsIcon sx={{ fontSize: 60, color: "white" }} />
-              </Paper>
-              <Typography variant="subtitle1" sx={{ fontWeight: 900 }}>{target.name}</Typography>
-            </Box>
-          </Box>
-
-          <Box sx={{ display: "flex", gap: 2, height: 420 }}>
-            {/* Proposer Field */}
-            <Paper sx={{ flex: 1, bgcolor: "#b9d5ff", p: 2, borderRadius: 3, display: "flex", flexDirection: "column" }}>
-              <Box sx={{ flexGrow: 1, overflowY: "auto", display: "flex", flexWrap: "wrap", gap: 1, alignContent: "flex-start" }}>
-                {proposerOwned.map(s => renderPropertyTile(s, true))}
-              </Box>
-              <Box sx={{ mt: 2, height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {balance > 0 && (
-                  <Paper sx={{ p: 1, display: "flex", alignItems: "center", gap: 1, bgcolor: "white", borderRadius: 2 }}>
-                    <Box sx={{ bgcolor: "#22c55e", color: "white", p: 0.5, borderRadius: 1, fontWeight: 900 }}>$</Box>
-                    <Typography sx={{ color: "black", fontWeight: 900, fontSize: "1.2rem" }}>{balance.toLocaleString()}</Typography>
-                  </Paper>
-                )}
-              </Box>
-            </Paper>
-
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-               <SwapHorizIcon sx={{ fontSize: 30, color: "white" }} />
-            </Box>
-
-            {/* Target Field */}
-            <Paper sx={{ flex: 1, bgcolor: "#ffc9c9", p: 2, borderRadius: 3, display: "flex", flexDirection: "column" }}>
-              <Box sx={{ flexGrow: 1, overflowY: "auto", display: "flex", flexWrap: "wrap", gap: 1, alignContent: "flex-start" }}>
-                {targetOwned.map(s => renderPropertyTile(s, false))}
-              </Box>
-              <Box sx={{ mt: 2, height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {balance < 0 && (
-                  <Paper sx={{ p: 1, display: "flex", alignItems: "center", gap: 1, bgcolor: "white", borderRadius: 2 }}>
-                    <Box sx={{ bgcolor: "#22c55e", color: "white", p: 0.5, borderRadius: 1, fontWeight: 900 }}>$</Box>
-                    <Typography sx={{ color: "black", fontWeight: 900, fontSize: "1.2rem" }}>{Math.abs(balance).toLocaleString()}</Typography>
-                  </Paper>
-                )}
-              </Box>
-            </Paper>
-          </Box>
-
-          {/* Money Buttons Footer */}
-          <Box sx={{ mt: 3, display: "flex", alignItems: "center", gap: 2 }}>
-            <Typography variant="body2" sx={{ fontWeight: 900 }}>CASH:</Typography>
-            <Stack direction="row" spacing={1}>
-              <Button size="small" variant="contained" onClick={() => handleUpdateBalance(1000)} sx={{ bgcolor: "#333", minWidth: 60 }}>+1000</Button>
-              <Button size="small" variant="contained" onClick={() => handleUpdateBalance(100)} sx={{ bgcolor: "#333", minWidth: 60 }}>+100</Button>
-              <Button size="small" variant="contained" onClick={() => handleUpdateBalance(-100)} sx={{ bgcolor: "#333", minWidth: 60 }}>-100</Button>
-              <Button size="small" variant="contained" onClick={() => handleUpdateBalance(-1000)} sx={{ bgcolor: "#333", minWidth: 60 }}>-1000</Button>
-            </Stack>
-            
-            {statusMessage && (
-               <Typography 
-                 variant="h6" 
-                 sx={{ 
-                   ml: "auto", 
-                   fontWeight: 900, 
-                   color: statusMessage === "DEAL ACCEPTED" ? "#22c55e" : "#ef4444" 
-                 }}
-               >
-                 {statusMessage}
-               </Typography>
-            )}
-          </Box>
-        </Box>
-
-        {/* Action Buttons */}
-        <Stack spacing={2} sx={{ width: 160, justifyContent: "center" }}>
-          <Button
-            onClick={handlePropose}
-            variant="contained"
-            sx={{
-              bgcolor: "#22c55e",
-              color: "white",
-              fontWeight: 900,
-              fontSize: "1.1rem",
-              py: 2,
-              borderRadius: 3,
-              border: "3px solid #000",
-              "&:hover": { bgcolor: "#16a34a" }
-            }}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            style={{ width: "100%", display: "flex", justifyContent: "center" }}
           >
-            PROPOSE<br/>DEAL
-          </Button>
-          <Button
-            onClick={onClose}
-            variant="contained"
-            sx={{
-              bgcolor: "#ef4444",
-              color: "white",
-              fontWeight: 900,
-              fontSize: "1.1rem",
-              py: 2,
-              borderRadius: 3,
-              border: "3px solid #000",
-              "&:hover": { bgcolor: "#dc2626" }
-            }}
-          >
-            CANCEL
-          </Button>
-        </Stack>
-      </Box>
+            <Box sx={{ position: "relative", width: "100%", maxWidth: 210, height: 550 }}>
+              
+                {/* Main Dialog Backgrounds */}
+              <Box sx={{ 
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                display: "flex", gap: "4px"
+              }}>
+                {/* Left Half Glass Panel */}
+                <Box sx={{ 
+                  flex: 1, height: "100%", borderRadius: "24px 24px 0 24px", position: "relative", overflow: "hidden",
+                  background: `color-mix(in srgb, ${proposer.color} 40%, rgba(0,0,0,0.3))`,
+                  backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+                  boxShadow: "0 25px 50px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.4), inset 0 8px 24px rgba(255,255,255,0.5)"
+                }}>
+                  {/* Distinct Dark Header Block */}
+                  <Box sx={{
+                    position: "absolute", top: 0, left: 0, right: 0, height: "94px",
+                    background: `linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%), color-mix(in srgb, ${proposer.color} 80%, black)`,
+                    boxShadow: "inset 0 6px 12px rgba(255,255,255,0.9), 0 4px 10px rgba(0,0,0,0.15)"
+                  }} />
+                  <Box sx={{ position: "absolute", top: "94px", bottom: 0, left: 0, right: 0, background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)" }} />
+                </Box>
+                {/* Right Half Glass Panel */}
+                <Box sx={{ 
+                  flex: 1, height: "100%", borderRadius: "24px 24px 24px 0", position: "relative", overflow: "hidden",
+                  background: `color-mix(in srgb, ${target.color} 40%, rgba(0,0,0,0.3))`,
+                  backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+                  boxShadow: "0 25px 50px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.4), inset 0 8px 24px rgba(255,255,255,0.5)"
+                }}>
+                  {/* Distinct Dark Header Block */}
+                  <Box sx={{
+                    position: "absolute", top: 0, left: 0, right: 0, height: "94px",
+                    background: `linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%), color-mix(in srgb, ${target.color} 80%, black)`,
+                    boxShadow: "inset 0 6px 12px rgba(255,255,255,0.9), 0 4px 10px rgba(0,0,0,0.15)"
+                  }} />
+                  <Box sx={{ position: "absolute", top: "94px", bottom: 0, left: 0, right: 0, background: "linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)" }} />
+                </Box>
+                
+                {/* Fade Transition Connector at Bottom */}
+                <Box sx={{
+                  position: "absolute",
+                  bottom: 0, left: 0, right: 0,
+                  height: "170px",
+                  borderRadius: "0 0 24px 24px",
+                  background: `linear-gradient(90deg, color-mix(in srgb, ${proposer.color} 40%, rgba(0,0,0,0.3)) 0%, color-mix(in srgb, ${target.color} 40%, rgba(0,0,0,0.3)) 100%)`,
+                  maskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+                  WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 100%)",
+                  boxShadow: "inset 0 0 0 2px rgba(255,255,255,0.4), inset 0 8px 24px rgba(255,255,255,0.5)",
+                  zIndex: 2,
+                  pointerEvents: "none"
+                }} />
+              </Box>
+
+                {/* Content Overlay */}
+                <Box sx={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column" }}>
+                  
+                  {/* Top: Property Lists */}
+                  <Box sx={{ display: "flex", flex: 1, pt: 7, pb: 1, gap: "4px" }}>
+                    {/* Left List */}
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <Box sx={{ height: "94px", width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", pb: 1, mt: -7 }}>
+                        <Typography sx={{ color: "white", fontWeight: 800, fontSize: "15px" }}>{proposer.name} (You)</Typography>
+                      </Box>
+                      <Box sx={{ height: 20, display: "flex", alignItems: "center", justifyContent: "center", mb: 2, mt: 1 }}>
+                        {balance > 0 && (
+                          <Typography sx={{ color: "#34d399", fontWeight: 800, fontSize: "16px", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                            +${balance.toLocaleString()}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, overflowY: "auto", maxHeight: "290px", pb: 2, '&::-webkit-scrollbar': { display: 'none' } }}>
+                        {proposerTradeItems.map(s => renderPropertyTile(s, true))}
+                      </Box>
+                    </Box>
+
+                    {/* Right List */}
+                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <Box sx={{ height: "94px", width: "100%", display: "flex", alignItems: "flex-end", justifyContent: "center", pb: 1, mt: -7 }}>
+                        <Typography sx={{ color: "white", fontWeight: 800, fontSize: "15px" }}>{target.name}</Typography>
+                      </Box>
+                      <Box sx={{ height: 20, display: "flex", alignItems: "center", justifyContent: "center", mb: 2, mt: 1 }}>
+                        {balance < 0 && (
+                          <Typography sx={{ color: "#34d399", fontWeight: 800, fontSize: "16px", textShadow: "0 2px 4px rgba(0,0,0,0.5)" }}>
+                            +${Math.abs(balance).toLocaleString()}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, overflowY: "auto", maxHeight: "290px", pb: 2, '&::-webkit-scrollbar': { display: 'none' } }}>
+                        {targetTradeItems.map(s => renderPropertyTile(s, false))}
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  {/* Bottom: Cash & Actions */}
+                  <Box sx={{ px: 1, pb: 2, pt: 1 }}>
+                    <Stack spacing={1.5} sx={{ alignItems: "center", mt: 1 }}>
+                      <Stack direction="row" spacing={1}>
+                        <IconButton onClick={() => onUpdateBalance(100)} sx={{ width: 44, height: 44, bgcolor: "rgba(255,255,255,0.2)", borderRadius: "12px", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" }}}>
+                          <AddIcon sx={{ color: "white", fontSize: 24 }} />
+                        </IconButton>
+                        <Box sx={{ width: 90, height: 44, bgcolor: "rgba(0,0,0,0.3)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Typography sx={{ color: "white", fontSize: "18px", fontWeight: 700 }}>100</Typography>
+                        </Box>
+                        <IconButton onClick={() => onUpdateBalance(-100)} sx={{ width: 44, height: 44, bgcolor: "rgba(255,255,255,0.2)", borderRadius: "12px", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" }}}>
+                          <RemoveIcon sx={{ color: "white", fontSize: 24 }} />
+                        </IconButton>
+                      </Stack>
+
+                      <Stack direction="row" spacing={1}>
+                        <IconButton onClick={() => onUpdateBalance(1000)} sx={{ width: 44, height: 44, bgcolor: "rgba(255,255,255,0.2)", borderRadius: "12px", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" }}}>
+                          <AddIcon sx={{ color: "white", fontSize: 24 }} />
+                        </IconButton>
+                        <Box sx={{ width: 90, height: 44, bgcolor: "rgba(0,0,0,0.3)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Typography sx={{ color: "white", fontSize: "18px", fontWeight: 700 }}>1000</Typography>
+                        </Box>
+                        <IconButton onClick={() => onUpdateBalance(-1000)} sx={{ width: 44, height: 44, bgcolor: "rgba(255,255,255,0.2)", borderRadius: "12px", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" }}}>
+                          <RemoveIcon sx={{ color: "white", fontSize: 24 }} />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+
+                    <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
+                      <Button
+                        onClick={onClose}
+                        variant="outlined"
+                        fullWidth
+                        sx={{
+                          py: 1.5,
+                          borderRadius: "30px",
+                          borderColor: "rgba(255,255,255,0.4)",
+                          borderWidth: "2px",
+                          color: "white",
+                          fontWeight: 800,
+                          fontSize: "16px",
+                          "&:hover": { borderWidth: "2px", borderColor: "white", bgcolor: "rgba(255,255,255,0.1)" }
+                        }}
+                      >
+                        CANCEL
+                      </Button>
+                      <Button
+                        onClick={onConfirmDeal}
+                        variant="contained"
+                        fullWidth
+                        sx={{
+                          py: 1.5,
+                          borderRadius: "30px",
+                          background: "linear-gradient(90deg, #34d399 0%, #10b981 100%)",
+                          color: "white",
+                          fontWeight: 800,
+                          fontSize: "16px",
+                          boxShadow: "0 4px 15px rgba(16, 185, 129, 0.4)",
+                          "&:hover": { background: "linear-gradient(90deg, #10b981 0%, #059669 100%)" }
+                        }}
+                      >
+                        PROPOSE
+                      </Button>
+                    </Stack>
+
+                  </Box>
+                </Box>
+
+              {/* Central Swap Icon */}
+              <Box sx={{ 
+                position: "absolute", top: "48%", left: "50%", transform: "translate(-50%, -50%)",
+                width: 32, height: 32, borderRadius: "50%",
+                background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10,
+                opacity: 0.7
+              }}>
+                <SyncIcon sx={{ color: "white", fontSize: 16, opacity: 0.8 }} />
+              </Box>
+
+              {/* Top Avatars (Outside the hidden overflow) */}
+              <Box sx={{ position: "absolute", top: -35, left: 0, right: 0, display: "flex", zIndex: 5 }}>
+                {/* Left Avatar */}
+                <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                  <Box sx={{ p: "3px", borderRadius: "50%", background: "linear-gradient(135deg, #f97316 0%, #ea580c 100%)", boxShadow: "0 6px 15px rgba(0,0,0,0.5)" }}>
+                    <Avatar sx={{ width: 50, height: 50, border: "2px solid white", bgcolor: proposer.color }}>
+                      <PersonIcon sx={{ fontSize: 28 }} />
+                    </Avatar>
+                  </Box>
+                </Box>
+                
+                {/* Right Avatar */}
+                <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+                  <Box sx={{ p: "3px", borderRadius: "50%", background: "linear-gradient(135deg, #d946ef 0%, #a21caf 100%)", boxShadow: "0 6px 15px rgba(0,0,0,0.5)" }}>
+                    <Avatar sx={{ width: 50, height: 50, border: "2px solid white", bgcolor: target.color }}>
+                      {target.type === PlayerType.AI ? <PetsIcon sx={{ fontSize: 28 }} /> : <PersonIcon sx={{ fontSize: 28 }} />}
+                    </Avatar>
+                  </Box>
+                </Box>
+              </Box>
+
+            </Box>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Dialog>
   );
 }

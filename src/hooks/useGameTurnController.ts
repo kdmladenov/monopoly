@@ -10,6 +10,7 @@ import {
   endTurn,
   declareBankruptcy,
   movePlayer,
+  landOnSquare,
   mortgageProperty,
   payRent,
   foldAuctionPlayer,
@@ -98,20 +99,30 @@ export function useGameTurnController() {
         passedStart,
       })
     );
-    setLastLandingPosition(newPosition);
-    const intent = getLandingIntent(landedSquare, game.board, player);
+    
+    // Calculate final arrival time based on the animation logic in AnimatedPawn
+    const baseDuration = (1 / game.settings.animationSpeed);
+    const stepDuration = (baseDuration * 1000) / 2;
+    const totalDelay = total * stepDuration + 100; // Small buffer
 
-    switch (intent.kind) {
-      case 'buy-property':
-      case 'pay-rent':
-      case 'special':
-        dispatch(addActivityLog(intent.message));
-        break;
-      default:
-        dispatch(addActivityLog(`${player.name} moved to square ${newPosition}.`));
-        break;
-    }
-  }, [currentPlayer, dispatch, game.board, game.phase]);
+    setTimeout(() => {
+      dispatch(landOnSquare());
+      setLastLandingPosition(newPosition);
+      const landedSquare = game.board[newPosition];
+      const inviteIntent = getLandingIntent(landedSquare, game.board, player);
+      
+      switch (inviteIntent.kind) {
+        case 'buy-property':
+        case 'pay-rent':
+        case 'special':
+          dispatch(addActivityLog(inviteIntent.message));
+          break;
+        default:
+          dispatch(addActivityLog(`${player.name} landed on ${landedSquare.position}.`));
+          break;
+      }
+    }, totalDelay);
+  }, [currentPlayer, dispatch, game.board, game.phase, game.settings.animationSpeed]);
 
   const handlePayJailFine = useCallback(() => {
     if (!currentPlayer || !currentPlayer.isInJail) return;
@@ -347,7 +358,7 @@ export function useGameTurnController() {
     if (game.turnPhase === TurnPhase.ROLL_DICE) {
       const timeout = setTimeout(() => {
         handleRoll();
-      }, 250);
+      }, 1000); // 1s delay to ensure board settled
 
       return () => clearTimeout(timeout);
     }

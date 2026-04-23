@@ -4,7 +4,7 @@ import { BoardSquare, DiceRoll } from '@/lib/game.types';
 import BoardSquareView from './BoardSquareView';
 import PlayerPawn from './PlayerPawn';
 import AnimatedPawn from './AnimatedPawn';
-import { Player } from '@/lib/game.types';
+import { Player, PlayerType } from '@/lib/game.types';
 import { Box, Typography, Paper, IconButton } from '@mui/material';
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
   onShowInfo?: (event: React.MouseEvent<HTMLElement>) => void;
   canRoll?: boolean;
   canEndTurn?: boolean;
+  activeTradePlayerIds?: string[];
 }
 
 export default function GameBoard({ 
@@ -30,7 +31,8 @@ export default function GameBoard({
   onEndTurn,
   onShowInfo,
   canRoll,
-  canEndTurn 
+  canEndTurn,
+  activeTradePlayerIds
 }: Props) {
   console.log('GameBoard rendering with board:', board?.length, 'squares');
 
@@ -131,7 +133,6 @@ export default function GameBoard({
         maxWidth: 500,
         aspectRatio: '6 / 16',
         bgcolor: '#c6e6d5',
-        overflow: 'hidden',
         gap: 0,
         border: '4px solid #1a1a1a',
         boxShadow: '0 0 40px rgba(0,0,0,0.3)',
@@ -182,56 +183,125 @@ export default function GameBoard({
           }
         }}
       >
-        {/* Player Stats at the TOP - Single Line */}
+        {/* Player Stats - Reorganized with Human Player below and bigger */}
         <Box sx={{ 
           display: 'flex', 
-          gap: 0.4, 
+          flexDirection: 'column',
+          gap: 1.5, 
           width: '100%', 
-          px: 0.5, 
-          justifyContent: 'center', 
-          flexWrap: 'nowrap', // Force single line
+          px: 1, 
+          alignItems: 'center',
           boxSizing: 'border-box'
         }}>
-          {players.map((p, idx) => (
-            <Paper 
-              key={p.id} 
-              elevation={idx === 0 ? 3 : 1} 
-              sx={{ 
-                p: 0.4, 
-                flex: '1 1 0', // Equal width distribution
-                maxWidth: 80,
-                minWidth: 50,
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                border: `1.5px solid ${p.color}`,
-                bgcolor: `${p.color}40`, // Consistent 25% opacity with property ownership
-                borderRadius: 1,
-                transition: 'all 0.2s',
-                transform: idx === 0 ? 'scale(1.03)' : 'none',
-                overflow: 'hidden'
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3, width: '100%', justifyContent: 'center' }}>
-                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: p.color, flexShrink: 0 }} />
-                <Typography sx={{ 
-                  fontWeight: 800, 
-                  fontSize: '0.42rem', 
-                  color: 'black', 
-                  textTransform: 'uppercase', 
-                  fontFamily: '"Roboto Condensed", sans-serif',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {p.name}
+          {/* AI Players - Compact Row at the Top */}
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 0.5, 
+            width: '100%', 
+            justifyContent: 'center', 
+            flexWrap: 'nowrap'
+          }}>
+            {players.filter(p => p.type === PlayerType.AI).map((p) => (
+              <Paper 
+                key={p.id} 
+                elevation={1} 
+                sx={{ 
+                  p: 0.35, 
+                  flex: '1 1 0',
+                  maxWidth: 70,
+                  minWidth: 45,
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  border: `1px solid ${p.color}`,
+                  bgcolor: `${p.color}25`, // Subtle background
+                  borderRadius: 0.8,
+                  opacity: 0.9,
+                  transition: 'all 0.2s',
+                  overflow: 'hidden'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2, width: '100%', justifyContent: 'center' }}>
+                  <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: p.color, flexShrink: 0 }} />
+                  <Typography sx={{ 
+                    fontWeight: 700, 
+                    fontSize: '0.4rem', 
+                    color: 'black', 
+                    textTransform: 'uppercase', 
+                    fontFamily: '"Roboto Condensed", sans-serif',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {p.name}
+                  </Typography>
+                </Box>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.55rem', color: 'black' }}>
+                  {p.money.toLocaleString()}
                 </Typography>
-              </Box>
-              <Typography sx={{ fontWeight: 900, fontSize: '0.65rem', color: 'black' }}>
-                {p.money.toLocaleString()}
-              </Typography>
-            </Paper>
-          ))}
+              </Paper>
+            ))}
+          </Box>
+
+          {/* Human Players Group - Below AI and Larger */}
+          <Box sx={{ 
+            width: '100%', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: 1, 
+            flexWrap: 'wrap' // Handle multiple humans
+          }}>
+            {players.filter(p => p.type === PlayerType.HUMAN).map((p) => (
+              <Paper 
+                key={p.id} 
+                elevation={4} 
+                sx={{ 
+                  p: 0.8, 
+                  flex: '1 1 0',
+                  minWidth: 100,
+                  maxWidth: 140,
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  border: `2px solid ${p.color}`,
+                  bgcolor: `${p.color}45`, 
+                  borderRadius: 2,
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  // Always slightly bigger, but current human is extra emphasized
+                  transform: 'scale(1.02)',
+                  boxShadow: `0 4px 8px ${p.color}25`,
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, width: '100%', justifyContent: 'center', mb: 0.2 }}>
+                  <Box sx={{ 
+                    width: 6, 
+                    height: 6, 
+                    borderRadius: '50%', 
+                    bgcolor: p.color, 
+                    flexShrink: 0
+                  }} />
+                  <Typography sx={{ 
+                    fontWeight: 900, 
+                    fontSize: '0.65rem', 
+                    color: 'black', 
+                    textTransform: 'uppercase', 
+                    fontFamily: '"Roboto Condensed", sans-serif'
+                  }}>
+                    {p.name}
+                  </Typography>
+                </Box>
+                <Typography sx={{ 
+                  fontWeight: 950, 
+                  fontSize: '1rem', 
+                  color: 'black'
+                }}>
+                  {p.money.toLocaleString()} <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>¤</span>
+                </Typography>
+              </Paper>
+            ))}
+          </Box>
         </Box>
 
         {/* Gameplay Controls at the BOTTOM */}
@@ -242,9 +312,17 @@ export default function GameBoard({
             <Die value={lastDiceRoll?.die2 || 2} />
           </Box>
 
-          {/* Action Buttons */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '75%', alignItems: 'center' }}>
-            {canRoll && (
+          {/* Action Buttons - Fixed height container to prevent dice shifting */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 1.5, 
+            width: '75%', 
+            alignItems: 'center',
+            minHeight: 110, // Ensure dice don't jump when buttons disappear
+            justifyContent: 'center'
+          }}>
+            {canRoll ? (
               <Box 
                 component="button"
                 onClick={onRollDice}
@@ -259,7 +337,6 @@ export default function GameBoard({
                   fontWeight: 900,
                   fontSize: '1.3rem',
                   cursor: 'pointer',
-                  // Internal 3D Insets only (no bulky bottom shadow)
                   boxShadow: `
                     0 4px 10px rgba(0,0,0,0.3),
                     inset 0 4px 6px rgba(255,255,255,0.4),
@@ -278,9 +355,9 @@ export default function GameBoard({
               >
                 ROLL
               </Box>
-            )}
+            ) : null}
 
-            {canEndTurn && (
+            {canEndTurn ? (
               <Box 
                 component="button"
                 onClick={onEndTurn}
@@ -302,7 +379,7 @@ export default function GameBoard({
               >
                 END TURN
               </Box>
-            )}
+            ) : null}
           </Box>
         </Box>
       </Box>
@@ -321,24 +398,46 @@ export default function GameBoard({
         ))}
       </Box>
 
+      {/* Trade Overlay (dims the board except for participating properties) */}
+      {activeTradePlayerIds && (
+        <Box 
+          sx={{ 
+            position: 'absolute',
+            top: '-150vh',
+            left: '-150vw',
+            right: '-150vw',
+            bottom: '-150vh',
+            bgcolor: 'rgba(0,0,0,0.65)', 
+            zIndex: 50, 
+            cursor: 'default',
+          }} 
+        />
+      )}
+
       {/* Board Squares */}
-      {(board || []).map((square) => (
-        <Box
-          key={square.id}
-          sx={{
-            ...getSquareGridArea(square.position),
-            position: 'relative',
-            zIndex: 1,
-            cursor: 'pointer',
-          }}
-          onClick={() => onSquareClick?.(square.position)}
-        >
-          <BoardSquareView 
-            square={square} 
-            ownerColor={players.find(p => p.id === (square.property?.ownerId || square.transportation?.ownerId))?.color}
-          />
-        </Box>
-      ))}
+      {(board || []).map((square) => {
+        const ownerId = square.property?.ownerId || square.transportation?.ownerId;
+        const isTradeParticipantOwner = activeTradePlayerIds && ownerId && activeTradePlayerIds.includes(ownerId);
+
+        return (
+          <Box
+            key={square.id}
+            sx={{
+              ...getSquareGridArea(square.position),
+              position: 'relative',
+              zIndex: isTradeParticipantOwner ? 51 : 1,
+              cursor: 'pointer',
+              transition: 'z-index 0.3s'
+            }}
+            onClick={() => onSquareClick?.(square.position)}
+          >
+            <BoardSquareView 
+              square={square} 
+              ownerColor={players.find(p => p.id === ownerId)?.color}
+            />
+          </Box>
+        );
+      })}
     </Box>
   );
 }

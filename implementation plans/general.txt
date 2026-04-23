@@ -2614,7 +2614,7 @@ interface PayPlayersAction {
   {
     "id": "chance-10",
     "type": "CHANCE",
-    "text": "Make general repairs on all your property: For each house pay $25, For each hotel pay $100",
+    "text": "Make general repairs on all your property: For each house pay $25, For each hotel pay 100",
     "action": {
       "type": "REPAIRS",
       "perHouse": 25,

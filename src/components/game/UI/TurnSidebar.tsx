@@ -50,68 +50,84 @@ export default function TurnSidebar({
           overflowY: 'auto',
         }}
       >
-        {game.players.map((player) => {
-          const isActive = player.id === currentPlayer?.id;
-          return (
-            <Box key={player.id} sx={{ textAlign: 'center', mb: 1 }}>
-              <Typography 
-                variant="subtitle2" 
-                sx={{ 
-                  color: '#1e293b', 
-                  fontWeight: 900, 
-                  fontSize: '0.85rem',
-                  mb: 0.25 
-                }}
-              >
-                {player.name}
-              </Typography>
-              <Paper
-                elevation={isActive ? 4 : 1}
-                sx={{
-                  p: 0.75,
-                  bgcolor: 'white',
-                  borderRadius: 2,
-                  border: `3px solid ${player.color}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  transition: 'all 0.2s',
-                  transform: isActive ? 'scale(1.02)' : 'none',
-                  boxShadow: isActive ? `0 0 10px ${player.color}44` : 'none',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 70,
-                    height: 70,
-                    bgcolor: `${player.color}11`,
-                    borderRadius: 1.5,
-                    border: '1px solid #e2e8f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <Typography variant="h3" sx={{ opacity: 0.3, fontWeight: 900, color: player.color }}>
-                    {player.name[0]}
-                  </Typography>
-                </Box>
+        {[...game.players]
+          .sort((a, b) => {
+            // Move AI to top, Human to bottom
+            if (a.type === 'ai' && b.type === 'human') return -1;
+            if (a.type === 'human' && b.type === 'ai') return 1;
+            return 0;
+          })
+          .map((player) => {
+            const isActive = player.id === currentPlayer?.id;
+            const isHuman = player.type === 'human';
+            
+            return (
+              <Box key={player.id} sx={{ textAlign: 'center', mb: isHuman ? 2 : 1, mt: isHuman ? 1 : 0 }}>
                 <Typography 
-                  variant="h6" 
+                  variant="subtitle2" 
                   sx={{ 
-                    mt: 1, 
-                    color: '#16a34a', 
-                    fontWeight: 900,
-                    fontSize: '1.1rem' 
+                    color: '#1e293b', 
+                    fontWeight: 900, 
+                    fontSize: isHuman ? '1rem' : '0.85rem',
+                    mb: 0.25 
                   }}
                 >
-                  {player.money.toLocaleString()}
+                  {player.name}
                 </Typography>
-              </Paper>
-            </Box>
-          );
-        })}
+                <Paper
+                  elevation={isActive ? 6 : (isHuman ? 3 : 1)}
+                  sx={{
+                    p: isHuman ? 1.5 : 0.75,
+                    bgcolor: 'white',
+                    borderRadius: isHuman ? 3 : 2,
+                    border: `${isHuman ? 4 : 3}px solid ${player.color}`,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: isActive ? 'scale(1.05)' : (isHuman ? 'scale(1.02)' : 'none'),
+                    boxShadow: isActive 
+                      ? `0 0 15px ${player.color}66` 
+                      : (isHuman ? `0 4px 10px ${player.color}22` : 'none'),
+                    width: isHuman ? '90%' : 'auto',
+                    mx: 'auto'
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: isHuman ? 90 : 70,
+                      height: isHuman ? 90 : 70,
+                      bgcolor: `${player.color}11`,
+                      borderRadius: isHuman ? 2 : 1.5,
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <Typography 
+                      variant={isHuman ? "h2" : "h3"} 
+                      sx={{ opacity: 0.3, fontWeight: 900, color: player.color }}
+                    >
+                      {player.name[0]}
+                    </Typography>
+                  </Box>
+                  <Typography 
+                    variant={isHuman ? "h5" : "h6"} 
+                    sx={{ 
+                      mt: 1, 
+                      color: '#16a34a', 
+                      fontWeight: 900,
+                      fontSize: isHuman ? '1.4rem' : '1.1rem' 
+                    }}
+                  >
+                    {player.money.toLocaleString()}
+                  </Typography>
+                </Paper>
+              </Box>
+            );
+          })}
 
         <Box sx={{ mt: 'auto', p: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Button
